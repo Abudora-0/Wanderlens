@@ -1,0 +1,148 @@
+import type { Collection } from "@/lib/types";
+
+export const collections: Collection[] = [
+  {
+    id: "coastlines",
+    title: "Cut by the coast",
+    tagline: "Cliff roads, tide pools and harbour towns that glow at dusk.",
+    accent: "#38e1c4",
+    places: [
+      {
+        name: "Amalfi",
+        country: "Italy",
+        blurb: "Lemon terraces stacked above a Tyrrhenian blue bay.",
+        latitude: 40.634,
+        longitude: 14.602,
+      },
+      {
+        name: "Nazare",
+        country: "Portugal",
+        blurb: "Fishing town famous for winter waves the size of buildings.",
+        latitude: 39.601,
+        longitude: -9.07,
+      },
+      {
+        name: "Cape Town",
+        country: "South Africa",
+        blurb: "Table Mountain drops straight into two oceans.",
+        latitude: -33.925,
+        longitude: 18.424,
+      },
+      {
+        name: "Hakone",
+        country: "Japan",
+        blurb: "Hot springs, a pirate-ship lake and Fuji on a clear morning.",
+        latitude: 35.232,
+        longitude: 139.106,
+      },
+    ],
+  },
+  {
+    id: "ancient",
+    title: "Older than memory",
+    tagline: "Cities where every wall has been standing for a thousand years.",
+    accent: "#c9a227",
+    places: [
+      {
+        name: "Petra",
+        country: "Jordan",
+        blurb: "A trading city carved whole into rose sandstone canyons.",
+        latitude: 30.328,
+        longitude: 35.444,
+      },
+      {
+        name: "Kyoto",
+        country: "Japan",
+        blurb: "Two thousand temples, moss gardens and lantern-lit lanes.",
+        latitude: 35.011,
+        longitude: 135.768,
+      },
+      {
+        name: "Cusco",
+        country: "Peru",
+        blurb: "Inca foundations under Spanish arches, gateway to the Andes.",
+        latitude: -13.532,
+        longitude: -71.967,
+      },
+      {
+        name: "Luxor",
+        country: "Egypt",
+        blurb: "Open-air museum along the Nile with temples at both banks.",
+        latitude: 25.687,
+        longitude: 32.639,
+      },
+    ],
+  },
+  {
+    id: "wild-north",
+    title: "The wild north",
+    tagline: "Aurora, fjords and long light above the sixtieth parallel.",
+    accent: "#7c6cf5",
+    places: [
+      {
+        name: "Tromso",
+        country: "Norway",
+        blurb: "Arctic harbour under the northern lights and midnight sun.",
+        latitude: 69.649,
+        longitude: 18.956,
+      },
+      {
+        name: "Reykjavik",
+        country: "Iceland",
+        blurb: "Base camp for geysers, black beaches and glacier lagoons.",
+        latitude: 64.147,
+        longitude: -21.94,
+      },
+      {
+        name: "Rovaniemi",
+        country: "Finland",
+        blurb: "Lapland forests, reindeer trails and glass igloos.",
+        latitude: 66.5,
+        longitude: 25.73,
+      },
+      {
+        name: "Ilulissat",
+        country: "Greenland",
+        blurb: "Icebergs the size of city blocks drift past the harbour.",
+        latitude: 69.217,
+        longitude: -51.1,
+      },
+    ],
+  },
+  {
+    id: "high-places",
+    title: "Thin air",
+    tagline: "Trails, passes and villages where the mountains take over.",
+    accent: "#f2668b",
+    places: [
+      {
+        name: "Pokhara",
+        country: "Nepal",
+        blurb: "Lakeside launch point for the Annapurna circuit.",
+        latitude: 28.209,
+        longitude: 83.985,
+      },
+      {
+        name: "Chamonix",
+        country: "France",
+        blurb: "Cable cars into the Mont Blanc massif and its glaciers.",
+        latitude: 45.923,
+        longitude: 6.869,
+      },
+      {
+        name: "Queenstown",
+        country: "New Zealand",
+        blurb: "Southern Alps adventure town on a zigzag lake.",
+        latitude: -45.031,
+        longitude: 168.663,
+      },
+      {
+        name: "Huaraz",
+        country: "Peru",
+        blurb: "Gateway to the turquoise lakes of the Cordillera Blanca.",
+        latitude: -9.526,
+        longitude: -77.529,
+      },
+    ],
+  },
+];
