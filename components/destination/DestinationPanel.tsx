@@ -163,7 +163,7 @@ export function DestinationPanel() {
                           {item.label}
                         </a>
                         {` (${item.license})`}
-                        {index < dossier.attributions.length - 1 ? " , " : ""}
+                        {index < dossier.attributions.length - 1 ? ", " : ""}
                       </span>
                     ))}
                   </p>

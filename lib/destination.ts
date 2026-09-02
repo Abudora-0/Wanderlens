@@ -8,6 +8,7 @@ import { getWikivoyageAttractions } from "@/lib/sources/wikivoyage";
 import { getWikipediaNearby, getWikipediaSummary } from "@/lib/sources/wikipedia";
 import { getCountryByCode, getCountryByName } from "@/lib/sources/countries";
 import { getWeather } from "@/lib/sources/weather";
+import { normalizeDashes } from "@/lib/format";
 
 interface BuildInput {
   name: string;
@@ -156,7 +157,13 @@ export async function buildDossier(input: BuildInput): Promise<DestinationDossie
       return true;
     },
   );
-  const attractions = rankAndTrim(merged);
+  const attractions = rankAndTrim(merged).map((item) => ({
+    ...item,
+    title: normalizeDashes(item.title),
+    blurb: normalizeDashes(item.blurb),
+  }));
+
+  if (summary) summary = normalizeDashes(summary);
 
   let country = null;
   try {

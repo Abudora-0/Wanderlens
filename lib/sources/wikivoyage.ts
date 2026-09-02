@@ -239,7 +239,14 @@ async function getWikivoyageSummary(title: string): Promise<string | null> {
     const data = (await res.json()) as { extract?: string };
     const extract = data.extract?.trim();
     if (!extract) return null;
-    return extract.length > 460 ? `${extract.slice(0, 460).trim()}...` : extract;
+    if (extract.length <= 460) return extract;
+    const clipped = extract.slice(0, 460);
+    const lastStop = Math.max(
+      clipped.lastIndexOf(". "),
+      clipped.lastIndexOf("! "),
+    );
+    if (lastStop > 240) return clipped.slice(0, lastStop + 1);
+    return `${clipped.slice(0, clipped.lastIndexOf(" ")).trim()}...`;
   } catch {
     return null;
   }

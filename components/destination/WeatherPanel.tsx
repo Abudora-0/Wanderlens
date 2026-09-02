@@ -29,7 +29,7 @@ export function WeatherPanel({ weather }: { weather: WeatherNow }) {
           <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
             {weatherLabel(weather.code)}
             {weather.apparentTemperature !== null &&
-              ` , feels ${Math.round(weather.apparentTemperature)}`}
+              `, feels ${Math.round(weather.apparentTemperature)}`}
           </p>
         </div>
         <WeatherIcon code={weather.code} size={64} isDay={weather.isDay} />

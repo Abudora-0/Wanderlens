@@ -59,7 +59,7 @@ export function CountryFacts({ country }: { country: CountryFactsType }) {
             {country.name}
           </h3>
           <p className="text-xs text-[var(--color-ink-mute)]">
-            {[country.subregion, country.region].filter(Boolean).join(" , ")}
+            {[country.subregion, country.region].filter(Boolean).join(", ")}
           </p>
         </div>
       </div>

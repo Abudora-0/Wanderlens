@@ -29,6 +29,20 @@ const WEATHER_CODES: Record<number, { label: string; icon: string }> = {
   99: { label: "Thunderstorm", icon: "storm" },
 };
 
+/**
+ * Replace em and en dashes coming from third-party text with plain ASCII so the
+ * rendered product stays dash-clean. Numeric ranges collapse to a hyphen,
+ * parenthetical dashes become a spaced hyphen.
+ */
+export function normalizeDashes(input: string): string {
+  const dash = "[\\u2012\\u2013\\u2014\\u2015]";
+  return input
+    .replace(new RegExp(`(\\d)\\s*${dash}\\s*(\\d)`, "g"), "$1-$2")
+    .replace(new RegExp(`\\s*${dash}\\s*`, "g"), " - ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function weatherLabel(code: number): string {
   return WEATHER_CODES[code]?.label ?? "Unsettled";
 }
