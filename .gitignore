@@ -47,3 +47,6 @@ CLAUDE.md
 # local scratch files
 _*.json
 scratch-*.json
+
+# editor / assistant
+.claude/
