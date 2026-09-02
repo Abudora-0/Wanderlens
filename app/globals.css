@@ -1,0 +1,200 @@
+@import "tailwindcss";
+
+@theme {
+  --color-void: #05070f;
+  --color-abyss: #080b17;
+  --color-night: #0b0f1f;
+  --color-surface: #121829;
+  --color-surface-raised: #182036;
+  --color-hairline: #232c45;
+
+  --color-ink: #eef0f8;
+  --color-ink-soft: #b7bfd8;
+  --color-ink-mute: #7c86a6;
+
+  --color-teal: #38e1c4;
+  --color-iris: #7c6cf5;
+  --color-rose: #f2668b;
+  --color-gold: #f5c451;
+  --color-ember: #ff8a4c;
+
+  --font-display: var(--font-space-grotesk), "Space Grotesk", system-ui, sans-serif;
+  --font-sans: var(--font-sora), "Sora", system-ui, sans-serif;
+
+  --ease-lens: cubic-bezier(0.16, 1, 0.3, 1);
+  --shadow-lift: 0 24px 60px -20px rgba(3, 5, 12, 0.75);
+  --shadow-glow: 0 0 40px -8px color-mix(in oklab, var(--color-iris) 55%, transparent);
+}
+
+:root {
+  --aurora-1: var(--color-teal);
+  --aurora-2: var(--color-iris);
+  --aurora-3: var(--color-rose);
+  --page-progress: 0;
+  color-scheme: dark;
+}
+
+* {
+  border-color: var(--color-hairline);
+}
+
+html {
+  scrollbar-color: var(--color-iris) transparent;
+  scrollbar-width: thin;
+}
+
+body {
+  background-color: var(--color-void);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-iris) 45%, transparent);
+  color: var(--color-ink);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* Themed scrollbar */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-abyss);
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  border: 3px solid var(--color-abyss);
+  background: linear-gradient(
+    var(--color-teal),
+    var(--color-iris) 55%,
+    var(--color-rose)
+  );
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(var(--color-iris), var(--color-rose));
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--color-abyss);
+}
+
+/* Utilities */
+.text-aurora {
+  background: linear-gradient(
+    100deg,
+    var(--aurora-1),
+    var(--aurora-2) 45%,
+    var(--aurora-3)
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: aurora-pan 12s var(--ease-lens) infinite alternate;
+}
+
+.surface-card {
+  background: color-mix(in oklab, var(--color-surface) 88%, transparent);
+  border: 1px solid var(--color-hairline);
+  backdrop-filter: blur(14px);
+}
+
+.grain::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 60;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid var(--color-teal);
+  outline-offset: 2px;
+}
+
+@keyframes aurora-pan {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes iris-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+@keyframes shimmer {
+  to {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface) 25%,
+    var(--color-surface-raised) 50%,
+    var(--color-surface) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .text-aurora {
+    animation: none;
+  }
+}
