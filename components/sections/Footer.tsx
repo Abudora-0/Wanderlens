@@ -70,12 +70,12 @@ export function Footer() {
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-2 px-5 py-6 text-xs text-[var(--color-ink-mute)] sm:flex-row">
           <p>MIT licensed. Map and text data under their own open licenses.</p>
           <a
-            href="https://github.com/Abudora-0/wanderlens"
+            href="https://github.com/Abudora-0/Wanderlens"
             target="_blank"
             rel="noopener noreferrer"
             className="focus-ring rounded transition-colors hover:text-[var(--color-ink-soft)]"
           >
-            github.com/Abudora-0/wanderlens
+            github.com/Abudora-0/Wanderlens
           </a>
         </div>
       </div>
