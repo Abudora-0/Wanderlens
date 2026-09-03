@@ -4,25 +4,29 @@ import { motion } from "motion/react";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 
 const CENTER = 32;
-const R_IN = 12.5;
-const R_OUT = 30;
-const BLADES = 6;
+const LONG = 28;
+const SHORT = 13.5;
+const WAIST = 6;
 
-function point(radius: number, degrees: number) {
-  const rad = (degrees * Math.PI) / 180;
-  return {
-    x: CENTER + radius * Math.cos(rad),
-    y: CENTER + radius * Math.sin(rad),
-  };
+function pt(radius: number, angleDeg: number) {
+  const a = ((angleDeg - 90) * Math.PI) / 180;
+  return [CENTER + radius * Math.cos(a), CENTER + radius * Math.sin(a)] as const;
 }
 
-function bladePath(index: number) {
-  const base = index * (360 / BLADES) - 90;
-  const a = point(R_IN, base);
-  const b = point(R_IN, base + 360 / BLADES);
-  const c = point(R_OUT, base + 360 / BLADES - 14);
-  return `M ${a.x.toFixed(2)} ${a.y.toFixed(2)} L ${b.x.toFixed(2)} ${b.y.toFixed(2)} L ${c.x.toFixed(2)} ${c.y.toFixed(2)} Z`;
+function starPath() {
+  const cmds: string[] = [];
+  for (let i = 0; i < 8; i += 1) {
+    const tipR = i % 2 === 0 ? LONG : SHORT;
+    const [tx, ty] = pt(tipR, i * 45);
+    const [wx, wy] = pt(WAIST, i * 45 + 22.5);
+    cmds.push(`${i === 0 ? "M" : "L"} ${tx.toFixed(2)} ${ty.toFixed(2)}`);
+    cmds.push(`L ${wx.toFixed(2)} ${wy.toFixed(2)}`);
+  }
+  cmds.push("Z");
+  return cmds.join(" ");
 }
+
+const STAR = starPath();
 
 interface LogoProps {
   size?: number;
@@ -48,17 +52,17 @@ export function Logo({
       className={className}
       role="img"
       aria-label={title}
-      initial={shouldAnimate ? { rotate: -35, scale: 0.82, opacity: 0 } : false}
+      initial={shouldAnimate ? { rotate: -68, scale: 0.62, opacity: 0 } : false}
       animate={shouldAnimate ? { rotate: 0, scale: 1, opacity: 1 } : undefined}
-      transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ type: "spring", stiffness: 95, damping: 10, mass: 0.9 }}
     >
       <defs>
-        <linearGradient id="wl-blade" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id="wl-star" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="var(--color-teal)" />
-          <stop offset="55%" stopColor="var(--color-iris)" />
+          <stop offset="52%" stopColor="var(--color-iris)" />
           <stop offset="100%" stopColor="var(--color-rose)" />
         </linearGradient>
-        <radialGradient id="wl-core" cx="50%" cy="50%" r="50%">
+        <radialGradient id="wl-core" cx="50%" cy="45%" r="60%">
           <stop offset="0%" stopColor="var(--color-gold)" />
           <stop offset="100%" stopColor="var(--color-ember)" />
         </radialGradient>
@@ -69,77 +73,39 @@ export function Logo({
         animate={shouldAnimate ? { rotate: 360 } : undefined}
         transition={
           shouldAnimate
-            ? { duration: 26, ease: "linear", repeat: Infinity }
+            ? { duration: 64, ease: "linear", repeat: Infinity }
             : undefined
         }
       >
-        <circle
-          cx="32"
-          cy="32"
-          r={R_OUT}
-          fill="none"
-          stroke="var(--color-hairline)"
-          strokeWidth="1.5"
+        {/* faint back star for depth */}
+        <path
+          d={STAR}
+          transform="rotate(45 32 32)"
+          fill="var(--color-iris)"
+          fillOpacity={0.16}
         />
-        {Array.from({ length: BLADES }).map((_, index) => (
-          <motion.path
-            key={index}
-            d={bladePath(index)}
-            fill="url(#wl-blade)"
-            fillOpacity={0.9}
-            initial={
-              shouldAnimate
-                ? { scale: 0.4, rotate: 24, opacity: 0 }
-                : false
-            }
-            animate={
-              shouldAnimate ? { scale: 1, rotate: 0, opacity: 0.9 } : undefined
-            }
-            transition={{
-              duration: 0.7,
-              delay: 0.15 + index * 0.06,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-            style={{ transformOrigin: "32px 32px" }}
-          />
-        ))}
+        <path
+          d={STAR}
+          fill="url(#wl-star)"
+          stroke="var(--color-void)"
+          strokeWidth={1.4}
+          strokeLinejoin="round"
+        />
       </motion.g>
-
-      <ellipse
-        cx="32"
-        cy="32"
-        rx="10"
-        ry="20"
-        fill="none"
-        stroke="var(--color-ink)"
-        strokeOpacity="0.35"
-        strokeWidth="1.1"
-      />
-      <line
-        x1="12"
-        y1="32"
-        x2="52"
-        y2="32"
-        stroke="var(--color-ink)"
-        strokeOpacity="0.35"
-        strokeWidth="1.1"
-      />
 
       <motion.circle
         cx="32"
         cy="32"
-        r="5.5"
+        r="5"
         fill="url(#wl-core)"
         style={{ transformOrigin: "32px 32px" }}
-        initial={{ scale: 1, opacity: 0.9 }}
-        animate={
-          shouldAnimate
-            ? { scale: [1, 1.16, 1], opacity: [0.9, 1, 0.9] }
-            : undefined
+        initial={
+          shouldAnimate ? { scale: 0, opacity: 0 } : { scale: 1, opacity: 1 }
         }
+        animate={shouldAnimate ? { scale: 1, opacity: 1 } : undefined}
         transition={
           shouldAnimate
-            ? { duration: 3.4, ease: "easeInOut", repeat: Infinity }
+            ? { duration: 0.5, delay: 0.4, ease: [0.34, 1.56, 0.64, 1] }
             : undefined
         }
       />

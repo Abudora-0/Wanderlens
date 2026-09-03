@@ -23,15 +23,20 @@ export default function OpengraphImage() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <div
-            style={{
-              width: 64,
-              height: 64,
-              borderRadius: 18,
-              background:
-                "linear-gradient(135deg, #38e1c4, #7c6cf5 55%, #f2668b)",
-            }}
-          />
+          <svg width="64" height="64" viewBox="0 0 64 64">
+            <defs>
+              <linearGradient id="og-star" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#38e1c4" />
+                <stop offset="52%" stopColor="#7c6cf5" />
+                <stop offset="100%" stopColor="#f2668b" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M 32.00 4.00 L 34.30 26.46 L 41.55 22.45 L 37.54 29.70 L 60.00 32.00 L 37.54 34.30 L 41.55 41.55 L 34.30 37.54 L 32.00 60.00 L 29.70 37.54 L 22.45 41.55 L 26.46 34.30 L 4.00 32.00 L 26.46 29.70 L 22.45 22.45 L 29.70 26.46 Z"
+              fill="url(#og-star)"
+            />
+            <circle cx="32" cy="32" r="5" fill="#f5c451" />
+          </svg>
           <div style={{ fontSize: 34, fontWeight: 600, letterSpacing: -1 }}>
             Wanderlens
           </div>
@@ -48,7 +53,7 @@ export default function OpengraphImage() {
         </div>
 
         <div style={{ fontSize: 22, color: "#7c86a6" }}>
-          github.com/Abudora-0/wanderlens
+          wanderlenss.vercel.app
         </div>
       </div>
     ),
