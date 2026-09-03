@@ -25,6 +25,11 @@ const Globe = dynamic(() => import("react-globe.gl"), {
   ),
 });
 
+const RENDERER_CONFIG = {
+  antialias: true,
+  powerPreference: "high-performance" as const,
+};
+
 interface CountryFeature {
   type: "Feature";
   properties: Record<string, unknown>;
@@ -41,6 +46,9 @@ interface GlobeInstance {
     autoRotateSpeed: number;
     enableZoom: boolean;
   };
+  pauseAnimation: () => void;
+  resumeAnimation: () => void;
+  renderer: () => { setPixelRatio: (ratio: number) => void };
 }
 
 export function GlobePicker() {
@@ -122,8 +130,51 @@ export function GlobePicker() {
     controls.autoRotate = !reducedMotion;
     controls.autoRotateSpeed = 0.32;
     controls.enableZoom = true;
+    try {
+      const ratio = window.devicePixelRatio || 1;
+      globe.renderer().setPixelRatio(Math.max(1, Math.min(ratio, 1.5)));
+    } catch {
+      // renderer not exposed on some builds, safe to skip
+    }
+    globe.resumeAnimation();
     globe.pointOfView({ lat: 22, lng: 12, altitude: 2.2 }, 0);
   }, [reducedMotion]);
+
+  // Pause the render loop only once the globe is confirmed off-screen; always
+  // resume when it comes back. Never pauses before the globe has rendered.
+  useEffect(() => {
+    const element = wrapRef.current;
+    if (!element) return;
+    let seenVisible = false;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        const globe = globeRef.current;
+        if (!globe) return;
+        if (entry.isIntersecting) {
+          seenVisible = true;
+          globe.resumeAnimation();
+        } else if (seenVisible) {
+          globe.pauseAnimation();
+        }
+      },
+      { threshold: 0 },
+    );
+    observer.observe(element);
+
+    const onVisibility = () => {
+      const globe = globeRef.current;
+      if (!globe || !seenVisible) return;
+      if (document.hidden) globe.pauseAnimation();
+      else globe.resumeAnimation();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
 
   useEffect(() => {
     const globe = globeRef.current;
@@ -180,6 +231,29 @@ export function GlobePicker() {
     [select],
   );
 
+  const polygonCapColor = useCallback(
+    (feature: object) =>
+      feature === hovered
+        ? "rgba(56,225,196,0.6)"
+        : "rgba(124,108,245,0.22)",
+    [hovered],
+  );
+  const polygonAltitude = useCallback(
+    (feature: object) => (feature === hovered ? 0.06 : 0.01),
+    [hovered],
+  );
+  const polygonSideColor = useCallback(() => "rgba(124,108,245,0.12)", []);
+  const polygonStrokeColor = useCallback(() => "rgba(190,198,225,0.45)", []);
+  const pointColor = useCallback(() => "#f5c451", []);
+  const ringColor = useCallback(
+    () => (t: number) => `rgba(242,102,139,${1 - t})`,
+    [],
+  );
+  const handlePolygonHover = useCallback(
+    (feature: object | null) => setHovered(feature as CountryFeature | null),
+    [],
+  );
+
   if (reducedMotion || isNarrow || !webglOk) {
     return <GlobeFallback />;
   }
@@ -196,6 +270,7 @@ export function GlobePicker() {
         height={dimensions.height || 560}
         onGlobeReady={onGlobeReady}
         backgroundColor="rgba(0,0,0,0)"
+        rendererConfig={RENDERER_CONFIG}
         showAtmosphere
         atmosphereColor="#7c6cf5"
         atmosphereAltitude={0.22}
@@ -208,27 +283,19 @@ export function GlobePicker() {
           } as never
         }
         polygonsData={features as object[]}
-        polygonCapColor={(feature: object) =>
-          feature === hovered
-            ? "rgba(56,225,196,0.6)"
-            : "rgba(124,108,245,0.22)"
-        }
-        polygonSideColor={() => "rgba(124,108,245,0.12)"}
-        polygonStrokeColor={() => "rgba(190,198,225,0.45)"}
-        polygonAltitude={(feature: object) =>
-          feature === hovered ? 0.06 : 0.01
-        }
-        onPolygonHover={(feature: object | null) =>
-          setHovered(feature as CountryFeature | null)
-        }
+        polygonCapColor={polygonCapColor}
+        polygonSideColor={polygonSideColor}
+        polygonStrokeColor={polygonStrokeColor}
+        polygonAltitude={polygonAltitude}
+        onPolygonHover={handlePolygonHover}
         onPolygonClick={handlePolygonClick}
-        polygonsTransitionDuration={280}
+        polygonsTransitionDuration={200}
         pointsData={pointsData}
-        pointColor={() => "#f5c451"}
+        pointColor={pointColor}
         pointAltitude={0.03}
         pointRadius={0.5}
         ringsData={ringsData}
-        ringColor={() => (t: number) => `rgba(242,102,139,${1 - t})`}
+        ringColor={ringColor}
         ringMaxRadius={5}
         ringPropagationSpeed={2.4}
         ringRepeatPeriod={900}

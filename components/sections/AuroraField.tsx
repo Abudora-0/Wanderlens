@@ -3,108 +3,70 @@
 import { useEffect, useRef } from "react";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 
-interface Blob {
-  x: number;
-  y: number;
-  radius: number;
-  hue: string;
-  dx: number;
-  dy: number;
-}
-
-const HUES = ["56, 225, 196", "124, 108, 245", "242, 102, 139", "245, 196, 81"];
-
+/**
+ * The hero backdrop. Colour wash is pure CSS (GPU-composited blurred blobs on
+ * slow keyframe drift). Stars are painted once to a canvas, never on a loop.
+ */
 export function AuroraField() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const starRef = useRef<HTMLCanvasElement>(null);
   const reducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
-    const canvas = canvasRef.current;
+    const canvas = starRef.current;
     if (!canvas) return;
     const context = canvas.getContext("2d");
     if (!context) return;
 
-    let width = 0;
-    let height = 0;
-    let raf = 0;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-    const blobs: Blob[] = HUES.map((hue, index) => ({
-      x: Math.random(),
-      y: Math.random(),
-      radius: 0.32 + index * 0.05,
-      hue,
-      dx: (Math.random() - 0.5) * 0.00016,
-      dy: (Math.random() - 0.5) * 0.00016,
-    }));
-
-    const stars = Array.from({ length: 90 }).map(() => ({
-      x: Math.random(),
-      y: Math.random(),
-      size: Math.random() * 1.4 + 0.3,
-      twinkle: Math.random() * Math.PI * 2,
-    }));
-
-    const resize = () => {
-      width = canvas.offsetWidth;
-      height = canvas.offsetHeight;
+    const paint = () => {
+      const width = canvas.offsetWidth;
+      const height = canvas.offsetHeight;
+      if (width === 0 || height === 0) return;
       canvas.width = width * dpr;
       canvas.height = height * dpr;
-      context.setTransform(1, 0, 0, 1, 0, 0);
-      context.scale(dpr, dpr);
-    };
-    resize();
-    window.addEventListener("resize", resize);
-
-    const render = (time: number) => {
+      context.setTransform(dpr, 0, 0, dpr, 0, 0);
       context.clearRect(0, 0, width, height);
-      context.fillStyle = "#05070f";
-      context.fillRect(0, 0, width, height);
-
-      blobs.forEach((blob) => {
-        if (!reducedMotion) {
-          blob.x += blob.dx;
-          blob.y += blob.dy;
-          if (blob.x < -0.2 || blob.x > 1.2) blob.dx *= -1;
-          if (blob.y < -0.2 || blob.y > 1.2) blob.dy *= -1;
-        }
-        const cx = blob.x * width;
-        const cy = blob.y * height;
-        const r = blob.radius * Math.max(width, height);
-        const gradient = context.createRadialGradient(cx, cy, 0, cx, cy, r);
-        gradient.addColorStop(0, `rgba(${blob.hue}, 0.22)`);
-        gradient.addColorStop(1, "rgba(5, 7, 15, 0)");
-        context.fillStyle = gradient;
-        context.fillRect(0, 0, width, height);
-      });
-
-      stars.forEach((star) => {
-        const alpha = reducedMotion
-          ? 0.5
-          : 0.35 + Math.sin(time * 0.001 + star.twinkle) * 0.3;
-        context.fillStyle = `rgba(231, 234, 242, ${Math.max(0, alpha)})`;
+      const count = Math.round((width * height) / 14000);
+      for (let i = 0; i < count; i += 1) {
+        const size = Math.random() * 1.3 + 0.3;
+        context.fillStyle = `rgba(231, 234, 242, ${Math.random() * 0.5 + 0.15})`;
         context.beginPath();
-        context.arc(star.x * width, star.y * height, star.size, 0, Math.PI * 2);
+        context.arc(
+          Math.random() * width,
+          Math.random() * height,
+          size,
+          0,
+          Math.PI * 2,
+        );
         context.fill();
-      });
-
-      if (!reducedMotion) raf = requestAnimationFrame(render);
+      }
     };
 
-    raf = requestAnimationFrame(render);
-    if (reducedMotion) render(0);
-
+    paint();
+    let timer: number;
+    const onResize = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(paint, 200);
+    };
+    window.addEventListener("resize", onResize);
     return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", resize);
+      window.clearTimeout(timer);
+      window.removeEventListener("resize", onResize);
     };
-  }, [reducedMotion]);
+  }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
+    <div
       aria-hidden
-      className="absolute inset-0 h-full w-full"
-    />
+      className="absolute inset-0 overflow-hidden bg-[var(--color-void)]"
+      data-reduced={reducedMotion ? "true" : undefined}
+    >
+      <div className="aurora-blob aurora-blob-1" />
+      <div className="aurora-blob aurora-blob-2" />
+      <div className="aurora-blob aurora-blob-3" />
+      <div className="aurora-blob aurora-blob-4" />
+      <canvas ref={starRef} className="absolute inset-0 h-full w-full" />
+    </div>
   );
 }

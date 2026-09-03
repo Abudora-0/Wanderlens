@@ -1,4 +1,5 @@
 import type { WeatherNow } from "@/lib/types";
+import { timedFetch } from "@/lib/sources/http";
 
 interface ForecastResponse {
   timezone?: string;
@@ -37,7 +38,7 @@ export async function getWeather(
   url.searchParams.set("timezone", "auto");
   url.searchParams.set("forecast_days", "7");
 
-  const res = await fetch(url, { next: { revalidate: 3600 } });
+  const res = await timedFetch(url, { next: { revalidate: 3600 } });
   if (!res.ok) throw new Error(`weather upstream ${res.status}`);
 
   const data = (await res.json()) as ForecastResponse;

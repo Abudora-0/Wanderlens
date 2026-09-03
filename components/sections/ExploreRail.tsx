@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef } from "react";
-import { motion, useScroll, useTransform } from "motion/react";
+import { motion } from "motion/react";
 import { collections } from "@/lib/collections";
 import { useExperience } from "@/components/experience/store";
+import { scrollToTarget } from "@/components/ui/SmoothScroll";
 import type { GeoCandidate } from "@/lib/types";
 import { fadeUp } from "@/lib/motion";
 
@@ -27,7 +27,7 @@ export function ExploreRail() {
       timezone: null,
     };
     select(candidate);
-    document.getElementById("dossier")?.scrollIntoView({ behavior: "smooth" });
+    scrollToTarget("#dossier");
   };
 
   return (
@@ -57,13 +57,8 @@ export function ExploreRail() {
       </motion.div>
 
       <div className="space-y-16">
-        {collections.map((collection, rowIndex) => (
-          <Row
-            key={collection.id}
-            collection={collection}
-            rowIndex={rowIndex}
-            onPick={pick}
-          />
+        {collections.map((collection) => (
+          <Row key={collection.id} collection={collection} onPick={pick} />
         ))}
       </div>
     </section>
@@ -72,11 +67,9 @@ export function ExploreRail() {
 
 function Row({
   collection,
-  rowIndex,
   onPick,
 }: {
   collection: (typeof collections)[number];
-  rowIndex: number;
   onPick: (place: {
     name: string;
     country: string;
@@ -84,19 +77,8 @@ function Row({
     longitude: number;
   }) => void;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"],
-  });
-  const drift = useTransform(
-    scrollYProgress,
-    [0, 1],
-    rowIndex % 2 === 0 ? [40, -40] : [-40, 40],
-  );
-
   return (
-    <div ref={ref}>
+    <div>
       <div className="mb-4 flex items-center gap-3">
         <span
           className="h-2.5 w-2.5 rounded-full"
@@ -110,10 +92,7 @@ function Row({
         </span>
       </div>
 
-      <motion.div
-        style={{ x: drift }}
-        className="flex gap-4 overflow-x-auto pb-4 [scrollbar-width:thin]"
-      >
+      <div className="flex gap-4 overflow-x-auto pb-4 [scrollbar-width:thin]">
         {collection.places.map((place) => (
           <button
             key={place.name}
@@ -143,7 +122,7 @@ function Row({
             </p>
           </button>
         ))}
-      </motion.div>
+      </div>
     </div>
   );
 }

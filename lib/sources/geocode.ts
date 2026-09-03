@@ -1,4 +1,5 @@
 import type { GeoCandidate, PlaceKind } from "@/lib/types";
+import { timedFetch } from "@/lib/sources/http";
 
 interface OpenMeteoResult {
   id: number;
@@ -53,7 +54,7 @@ export async function geocode(query: string): Promise<GeoCandidate[]> {
   url.searchParams.set("language", "en");
   url.searchParams.set("format", "json");
 
-  const res = await fetch(url, { next: { revalidate: 86400 } });
+  const res = await timedFetch(url, { next: { revalidate: 86400 } });
   if (!res.ok) throw new Error(`geocode upstream ${res.status}`);
 
   const data = (await res.json()) as { results?: OpenMeteoResult[] };

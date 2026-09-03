@@ -29,6 +29,7 @@ export function AttractionCard({
 }) {
   const pointerFine = usePointerFine();
   const cardRef = useRef<HTMLElement>(null);
+  const rectRef = useRef<DOMRect | null>(null);
   const [broken, setBroken] = useState(false);
 
   const rotateX = useSpring(useMotionValue(0), { stiffness: 150, damping: 18 });
@@ -41,9 +42,14 @@ export function AttractionCard({
       `radial-gradient(240px circle at ${x}% ${y}%, rgba(124,108,245,0.22), transparent 70%)`,
   );
 
-  const onMove = (event: React.MouseEvent) => {
+  const onEnter = () => {
     if (!pointerFine || !cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
+    rectRef.current = cardRef.current.getBoundingClientRect();
+  };
+
+  const onMove = (event: React.MouseEvent) => {
+    const rect = rectRef.current;
+    if (!pointerFine || !rect) return;
     const px = (event.clientX - rect.left) / rect.width;
     const py = (event.clientY - rect.top) / rect.height;
     rotateY.set((px - 0.5) * 10);
@@ -66,6 +72,7 @@ export function AttractionCard({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 0.6, delay: Math.min(index * 0.05, 0.4) }}
+      onMouseEnter={onEnter}
       onMouseMove={onMove}
       onMouseLeave={onLeave}
       style={{ rotateX, rotateY, transformPerspective: 900 }}
@@ -83,10 +90,9 @@ export function AttractionCard({
             src={attraction.image as string}
             alt={attraction.title}
             fill
-            sizes="(max-width: 768px) 100vw, 33vw"
+            sizes="(max-width: 640px) 92vw, (max-width: 1280px) 46vw, 30vw"
             className="object-cover transition-transform duration-700 group-hover:scale-105"
             onError={() => setBroken(true)}
-            unoptimized
           />
         ) : (
           <PatternFallback seed={attraction.id} />

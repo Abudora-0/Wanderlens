@@ -18,7 +18,7 @@
   --color-gold: #f5c451;
   --color-ember: #ff8a4c;
 
-  --font-display: var(--font-space-grotesk), "Space Grotesk", system-ui, sans-serif;
+  --font-display: var(--font-bricolage), "Bricolage Grotesque", system-ui, sans-serif;
   --font-sans: var(--font-sora), "Sora", system-ui, sans-serif;
 
   --ease-lens: cubic-bezier(0.16, 1, 0.3, 1);
@@ -63,7 +63,7 @@ h3,
 h4 {
   font-family: var(--font-display);
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.015em;
 }
 
 /* Themed scrollbar */
@@ -111,9 +111,75 @@ h4 {
 }
 
 .surface-card {
-  background: color-mix(in oklab, var(--color-surface) 88%, transparent);
+  background: color-mix(in oklab, var(--color-surface) 96%, transparent);
   border: 1px solid var(--color-hairline);
-  backdrop-filter: blur(14px);
+}
+
+/* Hero colour wash: GPU-composited blurred blobs, slow drift, no JS loop */
+.aurora-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.5;
+  will-change: transform;
+}
+
+.aurora-blob-1 {
+  top: -10%;
+  left: -5%;
+  width: 55vw;
+  height: 55vw;
+  background: radial-gradient(circle, rgba(56, 225, 196, 0.5), transparent 68%);
+  animation: aurora-drift-1 42s var(--ease-lens) infinite alternate;
+}
+
+.aurora-blob-2 {
+  top: 5%;
+  right: -12%;
+  width: 60vw;
+  height: 60vw;
+  background: radial-gradient(circle, rgba(124, 108, 245, 0.45), transparent 68%);
+  animation: aurora-drift-2 55s var(--ease-lens) infinite alternate;
+}
+
+.aurora-blob-3 {
+  bottom: -20%;
+  left: 15%;
+  width: 50vw;
+  height: 50vw;
+  background: radial-gradient(circle, rgba(242, 102, 139, 0.4), transparent 68%);
+  animation: aurora-drift-3 48s var(--ease-lens) infinite alternate;
+}
+
+.aurora-blob-4 {
+  bottom: 0%;
+  right: 10%;
+  width: 34vw;
+  height: 34vw;
+  background: radial-gradient(circle, rgba(245, 196, 81, 0.28), transparent 70%);
+  animation: aurora-drift-1 60s var(--ease-lens) infinite alternate-reverse;
+}
+
+[data-reduced="true"] .aurora-blob {
+  animation: none;
+}
+
+@keyframes aurora-drift-1 {
+  to {
+    transform: translate3d(8%, 6%, 0) scale(1.12);
+  }
+}
+
+@keyframes aurora-drift-2 {
+  to {
+    transform: translate3d(-10%, 8%, 0) scale(1.08);
+  }
+}
+
+@keyframes aurora-drift-3 {
+  to {
+    transform: translate3d(6%, -8%, 0) scale(1.15);
+  }
 }
 
 .grain::after {
@@ -122,7 +188,7 @@ h4 {
   inset: 0;
   pointer-events: none;
   z-index: 60;
-  opacity: 0.04;
+  opacity: 0.03;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 

@@ -1,5 +1,6 @@
 import type { CountryFacts } from "@/lib/types";
 import dataset from "@/lib/data/countries.json";
+import { timedFetch } from "@/lib/sources/http";
 
 interface StaticCountry {
   name: string;
@@ -38,7 +39,7 @@ function findByName(name: string): [string, StaticCountry] | null {
 async function getPopulation(iso3: string | null): Promise<number | null> {
   if (!iso3) return null;
   try {
-    const res = await fetch(
+    const res = await timedFetch(
       `https://api.worldbank.org/v2/country/${iso3}/indicator/SP.POP.TOTL?format=json&per_page=1&mrv=1`,
       { next: { revalidate: 604800 } },
     );

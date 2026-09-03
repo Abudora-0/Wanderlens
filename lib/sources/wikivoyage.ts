@@ -1,5 +1,6 @@
 import type { Attraction, AttractionCategory } from "@/lib/types";
 import { haversineKm } from "@/lib/format";
+import { timedFetch } from "@/lib/sources/http";
 
 interface ParseResponse {
   parse?: {
@@ -158,7 +159,7 @@ export async function getWikivoyageAttractions(
   url.searchParams.set("format", "json");
   url.searchParams.set("formatversion", "2");
 
-  const res = await fetch(url, {
+  const res = await timedFetch(url, {
     next: { revalidate: 86400 },
     headers: { "User-Agent": "Wanderlens/1.0 (open-source travel discovery)" },
   });
@@ -228,7 +229,7 @@ export async function getWikivoyageAttractions(
 
 async function getWikivoyageSummary(title: string): Promise<string | null> {
   try {
-    const res = await fetch(
+    const res = await timedFetch(
       `https://en.wikivoyage.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`,
       {
         next: { revalidate: 86400 },

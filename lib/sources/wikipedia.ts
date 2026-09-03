@@ -1,5 +1,6 @@
 import type { Attraction, AttractionCategory } from "@/lib/types";
 import { haversineKm } from "@/lib/format";
+import { timedFetch } from "@/lib/sources/http";
 
 interface GeoSearchResponse {
   query?: {
@@ -91,7 +92,7 @@ export async function getWikipediaNearby(
   searchUrl.searchParams.set("format", "json");
   searchUrl.searchParams.set("formatversion", "2");
 
-  const searchRes = await fetch(searchUrl, {
+  const searchRes = await timedFetch(searchUrl, {
     next: { revalidate: 86400 },
     headers: { "User-Agent": "Wanderlens/1.0 (open-source travel discovery)" },
   });
@@ -113,12 +114,12 @@ export async function getWikipediaNearby(
   detailUrl.searchParams.set("explaintext", "1");
   detailUrl.searchParams.set("exsentences", "2");
   detailUrl.searchParams.set("piprop", "thumbnail");
-  detailUrl.searchParams.set("pithumbsize", "800");
+  detailUrl.searchParams.set("pithumbsize", "480");
   detailUrl.searchParams.set("inprop", "url");
   detailUrl.searchParams.set("format", "json");
   detailUrl.searchParams.set("formatversion", "2");
 
-  const detailRes = await fetch(detailUrl, {
+  const detailRes = await timedFetch(detailUrl, {
     next: { revalidate: 86400 },
     headers: { "User-Agent": "Wanderlens/1.0 (open-source travel discovery)" },
   });
@@ -176,7 +177,7 @@ export async function getWikipediaSummary(
   title: string,
 ): Promise<{ summary: string | null; image: string | null; url: string | null }> {
   const url = new URL("https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(title));
-  const res = await fetch(url, {
+  const res = await timedFetch(url, {
     next: { revalidate: 86400 },
     headers: { "User-Agent": "Wanderlens/1.0 (open-source travel discovery)" },
   });

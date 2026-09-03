@@ -22,7 +22,7 @@ export function Nav() {
       <div
         className={`mt-3 flex w-full max-w-6xl items-center justify-between rounded-2xl border px-4 py-2.5 transition-all duration-300 ${
           condensed
-            ? "border-[var(--color-hairline)] bg-[color-mix(in_oklab,var(--color-abyss)_82%,transparent)] backdrop-blur-xl"
+            ? "border-[var(--color-hairline)] bg-[color-mix(in_oklab,var(--color-abyss)_90%,transparent)] backdrop-blur-md"
             : "border-transparent bg-transparent"
         }`}
       >
@@ -35,7 +35,7 @@ export function Nav() {
             Collections
           </a>
           <a
-            href="https://github.com/Abudora-0/wanderlens"
+            href="https://github.com/Abudora-0/Wanderlens"
             target="_blank"
             rel="noopener noreferrer"
             className="focus-ring rounded-lg border border-[var(--color-hairline)] px-3 py-1.5 text-[var(--color-ink-soft)] transition-colors hover:border-[var(--color-iris)] hover:text-[var(--color-ink)]"

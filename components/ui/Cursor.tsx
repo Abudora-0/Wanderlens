@@ -1,14 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, useMotionValue, useSpring } from "motion/react";
 import { usePointerFine, usePrefersReducedMotion } from "@/lib/hooks";
+
+const INTERACTIVE = 'a, button, [role="button"], input, select, [data-cursor="grab"]';
 
 export function Cursor() {
   const pointerFine = usePointerFine();
   const reducedMotion = usePrefersReducedMotion();
   const [active, setActive] = useState(false);
   const [hidden, setHidden] = useState(true);
+  const activeRef = useRef(false);
+  const hiddenRef = useRef(true);
 
   const x = useMotionValue(-100);
   const y = useMotionValue(-100);
@@ -18,26 +22,43 @@ export function Cursor() {
   useEffect(() => {
     if (!pointerFine || reducedMotion) return;
 
+    // Position only. Motion values do not trigger React renders.
     const move = (event: PointerEvent) => {
       x.set(event.clientX);
       y.set(event.clientY);
-      setHidden(false);
-      const target = event.target as HTMLElement;
-      setActive(
-        Boolean(
-          target.closest(
-            'a, button, [role="button"], input, select, [data-cursor="grab"]',
-          ),
-        ),
-      );
+      if (hiddenRef.current) {
+        hiddenRef.current = false;
+        setHidden(false);
+      }
     };
-    const leave = () => setHidden(true);
+    // Hover state changes rarely, so drive it off enter/leave, not movement.
+    const over = (event: PointerEvent) => {
+      const next = Boolean(
+        (event.target as HTMLElement | null)?.closest?.(INTERACTIVE),
+      );
+      if (next !== activeRef.current) {
+        activeRef.current = next;
+        setActive(next);
+      }
+    };
+    const leaveWindow = () => {
+      if (!hiddenRef.current) {
+        hiddenRef.current = true;
+        setHidden(true);
+      }
+    };
 
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerleave", leave);
+    window.addEventListener("pointermove", move, { passive: true });
+    document.addEventListener("pointerover", over, { passive: true });
+    document.addEventListener("pointerout", over, { passive: true });
+    window.addEventListener("pointerleave", leaveWindow);
+    window.addEventListener("blur", leaveWindow);
     return () => {
       window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerleave", leave);
+      document.removeEventListener("pointerover", over);
+      document.removeEventListener("pointerout", over);
+      window.removeEventListener("pointerleave", leaveWindow);
+      window.removeEventListener("blur", leaveWindow);
     };
   }, [pointerFine, reducedMotion, x, y]);
 
