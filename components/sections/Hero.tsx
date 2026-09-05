@@ -37,7 +37,7 @@ export function Hero() {
         >
           <motion.p
             variants={fadeUp}
-            className="mb-5 inline-flex items-center gap-2 rounded-full border border-[var(--color-hairline)] bg-[var(--color-surface)]/50 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-[var(--color-ink-soft)] backdrop-blur"
+            className="mb-5 inline-flex items-center gap-2 rounded-full border border-[var(--color-hairline)] bg-[var(--color-surface)]/70 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-[var(--color-ink-soft)]"
           >
             <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-teal)]" />
             Open travel data, one lens
@@ -94,10 +94,10 @@ export function Hero() {
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.92 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
-          className="relative"
+          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
+          className="relative flex items-center justify-center py-6"
         >
           <GlobePicker />
         </motion.div>
