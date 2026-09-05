@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { ExperienceProvider, useExperience } from "@/components/experience/store";
-import { scrollToTarget } from "@/components/ui/SmoothScroll";
+import { scrollToTarget } from "@/lib/scroll";
 import { Nav } from "@/components/sections/Nav";
 import { Hero } from "@/components/sections/Hero";
 import { DestinationPanel } from "@/components/destination/DestinationPanel";
@@ -13,7 +13,7 @@ function ScrollBridge() {
   const { selected } = useExperience();
   useEffect(() => {
     if (!selected) return;
-    const timer = setTimeout(() => scrollToTarget("#dossier"), 120);
+    const timer = setTimeout(() => scrollToTarget("#dossier"), 200);
     return () => clearTimeout(timer);
   }, [selected]);
   return null;

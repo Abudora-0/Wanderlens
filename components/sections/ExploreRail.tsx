@@ -3,7 +3,7 @@
 import { motion } from "motion/react";
 import { collections } from "@/lib/collections";
 import { useExperience } from "@/components/experience/store";
-import { scrollToTarget } from "@/components/ui/SmoothScroll";
+import { scrollToTarget } from "@/lib/scroll";
 import type { GeoCandidate } from "@/lib/types";
 import { fadeUp } from "@/lib/motion";
 

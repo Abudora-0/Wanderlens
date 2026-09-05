@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Sora } from "next/font/google";
 import "./globals.css";
-import { SmoothScroll } from "@/components/ui/SmoothScroll";
 import { Cursor } from "@/components/ui/Cursor";
 import { ScrollProgress } from "@/components/ui/ScrollProgress";
 
@@ -66,7 +65,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="grain min-h-full">
         <ScrollProgress />
         <Cursor />
-        <SmoothScroll>{children}</SmoothScroll>
+        {children}
       </body>
     </html>
   );
