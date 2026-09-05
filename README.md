@@ -16,7 +16,7 @@ Built entirely on open travel data. No API keys, no accounts, no trackers.
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38bdf8?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
-[![three.js](https://img.shields.io/badge/three.js-globe-7c6cf5?logo=threedotjs&logoColor=white)](https://threejs.org)
+[![cobe](https://img.shields.io/badge/cobe-WebGL_globe-7c6cf5)](https://github.com/shuding/cobe)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-38e1c4.svg)](https://github.com/Abudora-0/Wanderlens/pulls)
 [![Deploy with Vercel](https://img.shields.io/badge/Deploy-Vercel-000000?logo=vercel)](https://vercel.com/new/clone?repository-url=https://github.com/Abudora-0/Wanderlens)
 
@@ -44,17 +44,17 @@ Everything is deep linkable, so a destination view has its own shareable URL.
 
 ## Highlights
 
-- **Interactive WebGL globe** built with three.js. Hover to highlight countries,
-  click to dive in, watch the camera fly to your pick with a pulse ring on
-  landing. Auto-rotates until you take over.
+- **Interactive WebGL globe** built with cobe. Drag to spin, it auto-rotates when
+  idle, curated destinations sit on it as markers, and it stops rendering the
+  moment it scrolls off screen. Under 6 KB, buttery on low-end machines.
 - **Animated compass-star logo** rendered as live SVG. It settles in like a needle
   finding north, then keeps a slow rotation. The wordmark rises letter by letter.
 - **A theme that runs all the way down** to the controls: a gradient scrollbar, a
   scroll-progress rail, odometer counters, a custom listbox, a custom range
   slider, a magnetic cursor and a CSS aurora with a painted starfield.
 - **Motion with manners.** Every animation has a reduced-motion fallback, the
-  globe degrades to a lightweight spinning marker globe and a searchable list on
-  small screens or when WebGL is unavailable.
+  globe freezes when reduced motion is set and drops to a static gradient sphere
+  when WebGL is unavailable, and it never runs while off screen.
 - **Resilient data layer.** Each upstream source is fetched and cached
   independently, so one slow or failing API degrades the page instead of
   breaking it.
@@ -78,8 +78,8 @@ All open, all keyless.
 | --- | --- |
 | Framework | Next.js App Router, React, TypeScript |
 | Styling | Tailwind CSS v4 with a hand-built token layer |
-| 3D globe | three.js via react-globe.gl, plus cobe for the fallback |
-| Animation | Motion (Framer Motion), Lenis smooth scroll |
+| Globe | cobe (WebGL), paused when off screen |
+| Animation | Motion (Framer Motion), native smooth scroll |
 | Data | Route handlers with layered fetch caching, no database |
 | Hosting | Vercel, zero configuration, zero environment variables |
 
@@ -119,7 +119,7 @@ app/
   icon.svg
 components/
   brand/            animated logo and wordmark
-  globe/            three.js globe and the fallback
+  globe/            the cobe WebGL globe
   experience/       state store, search field, page shell
   destination/      dossier, weather, country facts, attraction cards
   sections/         hero, aurora field, explore rail, footer, nav
