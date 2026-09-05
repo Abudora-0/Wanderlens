@@ -205,20 +205,15 @@ export function DestinationPanel() {
                     the category.
                   </div>
                 ) : (
-                  <motion.div
-                    layout
-                    className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3"
-                  >
-                    <AnimatePresence mode="popLayout">
-                      {visible.map((attraction, index) => (
-                        <AttractionCard
-                          key={attraction.id}
-                          attraction={attraction}
-                          index={index}
-                        />
-                      ))}
-                    </AnimatePresence>
-                  </motion.div>
+                  <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                    {visible.map((attraction, index) => (
+                      <AttractionCard
+                        key={attraction.id}
+                        attraction={attraction}
+                        index={index}
+                      />
+                    ))}
+                  </div>
                 )}
 
                 {dossier.partial.length > 0 && (

@@ -123,7 +123,7 @@ export function SearchField({
   return (
     <div ref={rootRef} className="relative w-full">
       <div
-        className={`group flex items-center gap-3 rounded-2xl border border-[var(--color-hairline)] bg-[color-mix(in_oklab,var(--color-surface)_70%,transparent)] backdrop-blur-xl transition-colors focus-within:border-[var(--color-iris)] ${
+        className={`group flex items-center gap-3 rounded-2xl border border-[var(--color-hairline)] bg-[color-mix(in_oklab,var(--color-surface)_88%,transparent)] transition-colors focus-within:border-[var(--color-iris)] ${
           big ? "px-5 py-4" : "px-4 py-2.5"
         }`}
       >

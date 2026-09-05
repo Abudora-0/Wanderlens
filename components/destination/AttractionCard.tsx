@@ -1,11 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
-import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
+import { useState } from "react";
+import { motion } from "motion/react";
 import type { Attraction } from "@/lib/types";
 import { formatDistance } from "@/lib/format";
-import { usePointerFine } from "@/lib/hooks";
 
 const CATEGORY_LABEL: Record<string, string> = {
   landmark: "Landmark",
@@ -27,63 +26,17 @@ export function AttractionCard({
   attraction: Attraction;
   index: number;
 }) {
-  const pointerFine = usePointerFine();
-  const cardRef = useRef<HTMLElement>(null);
-  const rectRef = useRef<DOMRect | null>(null);
   const [broken, setBroken] = useState(false);
-
-  const rotateX = useSpring(useMotionValue(0), { stiffness: 150, damping: 18 });
-  const rotateY = useSpring(useMotionValue(0), { stiffness: 150, damping: 18 });
-  const glowX = useMotionValue(50);
-  const glowY = useMotionValue(50);
-  const glow = useTransform(
-    [glowX, glowY],
-    ([x, y]) =>
-      `radial-gradient(240px circle at ${x}% ${y}%, rgba(124,108,245,0.22), transparent 70%)`,
-  );
-
-  const onEnter = () => {
-    if (!pointerFine || !cardRef.current) return;
-    rectRef.current = cardRef.current.getBoundingClientRect();
-  };
-
-  const onMove = (event: React.MouseEvent) => {
-    const rect = rectRef.current;
-    if (!pointerFine || !rect) return;
-    const px = (event.clientX - rect.left) / rect.width;
-    const py = (event.clientY - rect.top) / rect.height;
-    rotateY.set((px - 0.5) * 10);
-    rotateX.set((0.5 - py) * 10);
-    glowX.set(px * 100);
-    glowY.set(py * 100);
-  };
-
-  const onLeave = () => {
-    rotateX.set(0);
-    rotateY.set(0);
-  };
-
   const showImage = attraction.image && !broken;
 
   return (
     <motion.article
-      ref={cardRef}
-      initial={{ opacity: 0, y: 28 }}
+      initial={{ opacity: 0, y: 22 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.6, delay: Math.min(index * 0.05, 0.4) }}
-      onMouseEnter={onEnter}
-      onMouseMove={onMove}
-      onMouseLeave={onLeave}
-      style={{ rotateX, rotateY, transformPerspective: 900 }}
-      className="group relative flex flex-col overflow-hidden rounded-3xl border border-[var(--color-hairline)] bg-[var(--color-surface)]"
+      viewport={{ once: true, margin: "-40px" }}
+      transition={{ duration: 0.5, delay: Math.min(index * 0.04, 0.3) }}
+      className="group relative flex flex-col overflow-hidden rounded-3xl border border-[var(--color-hairline)] bg-[var(--color-surface)] transition-colors duration-300 hover:border-[var(--color-iris)]"
     >
-      <motion.div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-        style={{ background: glow }}
-      />
-
       <div className="relative aspect-[4/3] overflow-hidden bg-[var(--color-abyss)]">
         {showImage ? (
           <Image
@@ -91,16 +44,16 @@ export function AttractionCard({
             alt={attraction.title}
             fill
             sizes="(max-width: 640px) 92vw, (max-width: 1280px) 46vw, 30vw"
-            className="object-cover transition-transform duration-700 group-hover:scale-105"
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
             onError={() => setBroken(true)}
           />
         ) : (
           <PatternFallback seed={attraction.id} />
         )}
-        <span className="absolute left-3 top-3 rounded-full border border-white/15 bg-black/40 px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-white backdrop-blur">
+        <span className="absolute left-3 top-3 rounded-full border border-white/15 bg-black/45 px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-white">
           {CATEGORY_LABEL[attraction.category] ?? attraction.category}
         </span>
-        <span className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-full border border-white/15 bg-black/40 text-xs font-semibold text-[var(--color-gold)] backdrop-blur">
+        <span className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-full border border-white/15 bg-black/45 text-xs font-semibold text-[var(--color-gold)]">
           {index + 1}
         </span>
       </div>

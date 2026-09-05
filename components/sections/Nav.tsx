@@ -1,16 +1,25 @@
 "use client";
 
-import { motion, useScroll, useMotionValueEvent } from "motion/react";
-import { useState } from "react";
+import { motion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 import { Wordmark } from "@/components/brand/Wordmark";
 
 export function Nav() {
-  const { scrollY } = useScroll();
   const [condensed, setCondensed] = useState(false);
+  const condensedRef = useRef(false);
 
-  useMotionValueEvent(scrollY, "change", (latest) => {
-    setCondensed(latest > 40);
-  });
+  useEffect(() => {
+    const onScroll = () => {
+      const next = window.scrollY > 40;
+      if (next !== condensedRef.current) {
+        condensedRef.current = next;
+        setCondensed(next);
+      }
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
     <motion.header
@@ -20,9 +29,9 @@ export function Nav() {
       className="fixed inset-x-0 top-0 z-50 flex justify-center px-4"
     >
       <div
-        className={`mt-3 flex w-full max-w-6xl items-center justify-between rounded-2xl border px-4 py-2.5 transition-all duration-300 ${
+        className={`mt-3 flex w-full max-w-6xl items-center justify-between rounded-2xl border px-4 py-2.5 transition-colors duration-300 ${
           condensed
-            ? "border-[var(--color-hairline)] bg-[color-mix(in_oklab,var(--color-abyss)_90%,transparent)] backdrop-blur-md"
+            ? "border-[var(--color-hairline)] bg-[var(--color-abyss)]"
             : "border-transparent bg-transparent"
         }`}
       >
