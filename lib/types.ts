@@ -36,7 +36,7 @@ export interface Attraction {
   longitude: number | null;
   distanceKm: number | null;
   score: number;
-  source: "wikivoyage" | "wikipedia";
+  source: "wikivoyage" | "wikidata" | "wikipedia";
   url: string | null;
 }
 

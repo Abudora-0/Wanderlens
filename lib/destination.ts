@@ -1,14 +1,20 @@
 import type {
   Attraction,
+  AttractionCategory,
   Attribution,
   DestinationDossier,
   PlaceKind,
 } from "@/lib/types";
 import { getWikivoyageAttractions } from "@/lib/sources/wikivoyage";
-import { getWikipediaNearby, getWikipediaSummary } from "@/lib/sources/wikipedia";
+import {
+  getWikipediaNearby,
+  getWikipediaSummary,
+  getWikipediaBlurbs,
+} from "@/lib/sources/wikipedia";
+import { getWikidataSights, type WikidataSight } from "@/lib/sources/wikidata";
 import { getCountryByCode, getCountryByName } from "@/lib/sources/countries";
 import { getWeather } from "@/lib/sources/weather";
-import { normalizeDashes } from "@/lib/format";
+import { haversineKm, normalizeDashes } from "@/lib/format";
 
 interface BuildInput {
   name: string;
@@ -20,19 +26,84 @@ interface BuildInput {
   country: string | null;
 }
 
-function radiusForKind(kind: PlaceKind): number {
-  switch (kind) {
-    case "country":
-      return 10;
-    case "region":
-      return 9;
-    case "area":
-      return 6;
-    case "landmark":
-      return 4;
-    default:
-      return 7;
+function categoryFor(text: string): AttractionCategory {
+  const s = text.toLowerCase();
+  if (/museum|gallery|collection/.test(s)) return "museum";
+  if (
+    /temple|shrine|church|cathedral|mosque|basilica|monaster|abbey|synagogue|pagoda/.test(
+      s,
+    )
+  ) {
+    return "religious";
   }
+  if (
+    /castle|palace|fort|fortress|citadel|ruin|ancient|archaeolog|heritage|historic/.test(
+      s,
+    )
+  ) {
+    return "history";
+  }
+  if (
+    /park|garden|forest|mountain|lake|falls|waterfall|nature|volcano|glacier|cave|bamboo/.test(
+      s,
+    )
+  ) {
+    return "nature";
+  }
+  if (/beach|harbour|harbor|bay|river|canal|lagoon|coast|waterfront/.test(s))
+    return "water";
+  if (/tower|observation|viewpoint|lookout|panorama/.test(s))
+    return "viewpoint";
+  if (/theatre|theater|opera|concert hall|mural|sculpture/.test(s))
+    return "art";
+  if (/quarter|district|neighbou?rhood|old town|market|bazaar|square/.test(s))
+    return "neighborhood";
+  return "landmark";
+}
+
+async function wikidataToAttractions(
+  sights: WikidataSight[],
+  origin: { latitude: number; longitude: number },
+): Promise<Attraction[]> {
+  if (sights.length === 0) return [];
+  let blurbs: Awaited<ReturnType<typeof getWikipediaBlurbs>>;
+  try {
+    blurbs = await getWikipediaBlurbs(sights.map((s) => s.title));
+  } catch {
+    blurbs = new Map();
+  }
+
+  const NOT_VISITABLE =
+    /\bwas (a|an|the) [\w-]*\s?(ancient |former |early |medieval |dutch |roman |greek |walled )?(city|town|settlement|colony|trading post|fortification|province|region|kingdom|empire|capital)\b|\bis (a|the) (former|defunct|proposed)\b|\b(football|soccer|association football|rugby|baseball|basketball) (club|team|stadium)\b|\bhome (ground|stadium|arena|venue) (of|for|to)\b|\bformer name (of|for)\b|\bis an? (administrative|municipal) (division|district|area|unit)\b/i;
+
+  return sights
+    .map((sight) => {
+      const info = blurbs.get(sight.title);
+      return { sight, info, extract: info?.extract ?? "" };
+    })
+    .filter(({ extract }) => !NOT_VISITABLE.test(extract))
+    .map(({ sight, info }) => {
+      const lat = info?.latitude ?? sight.latitude;
+      const lon = info?.longitude ?? sight.longitude;
+      const blurb =
+        info?.extract && info.extract.length > 20
+          ? info.extract
+          : "A landmark that travellers to the area consistently seek out.";
+      return {
+        id: `wd-${sight.qid}`,
+        title: sight.title.replace(/\s+\(.*\)$/, ""),
+        blurb,
+        category: categoryFor(`${sight.title} ${blurb}`),
+        image: info?.image ?? null,
+        latitude: lat,
+        longitude: lon,
+        distanceKm: haversineKm(origin.latitude, origin.longitude, lat, lon),
+        // Fame, measured by how many language Wikipedias cover the place.
+        score: 3 + Math.min(sight.sitelinks / 6, 9) + (info?.image ? 1.5 : 0),
+        source: "wikidata" as const,
+        url: info?.url ?? `https://www.wikidata.org/wiki/${sight.qid}`,
+      } satisfies Attraction;
+    });
 }
 
 function normalizeTitle(value: string): string {
@@ -41,7 +112,8 @@ function normalizeTitle(value: string): string {
     .replace(/\(.*?\)/g, "")
     .replace(/[^a-z0-9 ]+/g, "")
     .replace(/\s+/g, " ")
-    .trim();
+    .trim()
+    .replace(/^(the|la|le|el|les|il|los)\s+/, "");
 }
 
 function mergeAttractions(
@@ -68,7 +140,9 @@ function mergeAttractions(
       longitude: existing.longitude ?? item.longitude,
       distanceKm: existing.distanceKm ?? item.distanceKm,
       blurb:
-        existing.blurb.length >= item.blurb.length ? existing.blurb : item.blurb,
+        existing.blurb.length >= item.blurb.length
+          ? existing.blurb
+          : item.blurb,
       url: existing.url ?? item.url,
       score: existing.score + item.score * 0.35 + 1.5,
     });
@@ -86,7 +160,11 @@ function mergeAttractions(
     if (overlap) {
       const existing = byTitle.get(overlap);
       if (existing && !existing.image && item.image) {
-        byTitle.set(overlap, { ...existing, image: item.image, score: existing.score + 1 });
+        byTitle.set(overlap, {
+          ...existing,
+          image: item.image,
+          score: existing.score + 1,
+        });
       }
       return;
     }
@@ -96,18 +174,45 @@ function mergeAttractions(
   return [...byTitle.values()];
 }
 
+function byScoreThenDistance(a: Attraction, b: Attraction): number {
+  if (Math.abs(b.score - a.score) > 0.01) return b.score - a.score;
+  return (a.distanceKm ?? 999) - (b.distanceKm ?? 999);
+}
+
+/**
+ * Wikivoyage's editor picks and Wikidata's most-documented heritage sites are
+ * the curated tier and always make the cut. Wikipedia geosearch only fills the
+ * slots left over, and only for results that cleared its popularity gate well
+ * enough to read like a real attraction rather than a nearby dot on the map.
+ */
 function rankAndTrim(attractions: Attraction[], limit = 18): Attraction[] {
-  return [...attractions]
-    .sort((a, b) => {
-      if (Math.abs(b.score - a.score) > 0.01) return b.score - a.score;
-      const aDist = a.distanceKm ?? 999;
-      const bDist = b.distanceKm ?? 999;
-      return aDist - bDist;
-    })
+  const curated = attractions
+    .filter((a) => a.source === "wikivoyage" || a.source === "wikidata")
+    .sort(byScoreThenDistance);
+  const discovered = attractions
+    .filter((a) => a.source === "wikipedia")
+    .sort(byScoreThenDistance);
+
+  const roomForDiscovered = Math.max(limit - curated.length, 0);
+  // When there are barely any curated sights, allow more geosearch fill so the
+  // page is not empty; when curation is rich, keep geosearch to a top-up.
+  const discoveredCutoff = curated.length >= 6 ? 5.5 : 3.5;
+
+  return [
+    ...curated.slice(0, limit),
+    ...discovered
+      .filter((a) => a.score >= discoveredCutoff)
+      .slice(0, Math.max(roomForDiscovered, curated.length < 4 ? 12 : 4)),
+  ]
+    .sort(byScoreThenDistance)
     .slice(0, limit);
 }
 
-function withDeadline<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+function withDeadline<T>(
+  promise: Promise<T>,
+  ms: number,
+  fallback: T,
+): Promise<T> {
   return Promise.race([
     promise,
     new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
@@ -116,21 +221,26 @@ function withDeadline<T>(promise: Promise<T>, ms: number, fallback: T): Promise<
 
 const TIMED_OUT = { status: "rejected", reason: "deadline" } as const;
 
-export async function buildDossier(input: BuildInput): Promise<DestinationDossier> {
-  const radius = radiusForKind(input.kind);
+export async function buildDossier(
+  input: BuildInput,
+): Promise<DestinationDossier> {
   const origin = { latitude: input.latitude, longitude: input.longitude };
   const partial: string[] = [];
 
-  // Overall deadline so a slow open API never blows the function budget.
-  const [wikivoyage, wikipediaNearby, wikipediaSummary, weather] =
+  // First wave: the curated sources plus the page-level context. Geosearch is
+  // held back so we do not hammer Wikimedia when the curated sources already
+  // have plenty.
+  const [wikivoyage, wikidataRaw, wikipediaSummary, weather] =
     await withDeadline(
       Promise.allSettled([
         getWikivoyageAttractions(input.name, origin),
-        getWikipediaNearby(origin, radius),
+        getWikidataSights(input.latitude, input.longitude).then((sights) =>
+          wikidataToAttractions(sights, origin),
+        ),
         getWikipediaSummary(input.name),
         getWeather(input.latitude, input.longitude),
       ]),
-      10000,
+      11000,
       [TIMED_OUT, TIMED_OUT, TIMED_OUT, TIMED_OUT] as never,
     );
 
@@ -146,11 +256,24 @@ export async function buildDossier(input: BuildInput): Promise<DestinationDossie
     partial.push("wikivoyage");
   }
 
+  const wikidataAttractions: Attraction[] =
+    wikidataRaw.status === "fulfilled" ? wikidataRaw.value : [];
+
+  // Only reach for geosearch if the curated sources came up thin.
+  const curatedCount = new Set(
+    [...voyageAttractions, ...wikidataAttractions].map((a) =>
+      normalizeTitle(a.title),
+    ),
+  ).size;
   let nearbyAttractions: Attraction[] = [];
-  if (wikipediaNearby.status === "fulfilled") {
-    nearbyAttractions = wikipediaNearby.value;
-  } else {
-    partial.push("wikipedia-nearby");
+  if (curatedCount < 12) {
+    const nearby = await withDeadline(
+      getWikipediaNearby(origin).catch(() => null),
+      8000,
+      null,
+    );
+    if (nearby) nearbyAttractions = nearby;
+    else partial.push("wikipedia-nearby");
   }
 
   if (wikipediaSummary.status === "fulfilled") {
@@ -161,13 +284,17 @@ export async function buildDossier(input: BuildInput): Promise<DestinationDossie
   }
 
   const placeKey = normalizeTitle(input.name);
-  const merged = mergeAttractions(voyageAttractions, nearbyAttractions).filter(
+  const JUNK_TITLE =
+    /\b(diocese|archdiocese|prefecture|municipality|arrondissement|department|province|county|district council|regional council|urban area|metropolitan area|agglomeration|census-designated|electoral district|constituency)\b|^(history|geography|culture|economy|climate|transport|demographics|politics|tourism|timeline|outline|list|index) (of|in) /i;
+  const curatedMerged = mergeAttractions(
+    voyageAttractions,
+    wikidataAttractions,
+  );
+  const merged = mergeAttractions(curatedMerged, nearbyAttractions).filter(
     (item) => {
       const key = normalizeTitle(item.title);
       if (key === placeKey) return false;
-      if (/\bdiocese\b|\barchdiocese\b|\bprefecture\b|\bmunicipality\b/i.test(item.title)) {
-        return false;
-      }
+      if (JUNK_TITLE.test(item.title)) return false;
       return true;
     },
   );
@@ -193,8 +320,7 @@ export async function buildDossier(input: BuildInput): Promise<DestinationDossie
     partial.push("countries");
   }
 
-  const weatherValue =
-    weather.status === "fulfilled" ? weather.value : null;
+  const weatherValue = weather.status === "fulfilled" ? weather.value : null;
   if (weather.status === "rejected") partial.push("weather");
 
   const attributions: Attribution[] = [];
@@ -205,11 +331,22 @@ export async function buildDossier(input: BuildInput): Promise<DestinationDossie
       license: "CC BY-SA 4.0",
     });
   }
-  if (nearbyAttractions.length > 0) {
+  if (
+    nearbyAttractions.length > 0 ||
+    wikidataAttractions.length > 0 ||
+    wikipediaSummary.status === "fulfilled"
+  ) {
     attributions.push({
       label: "Wikipedia",
       url: "https://en.wikipedia.org",
       license: "CC BY-SA 4.0",
+    });
+  }
+  if (wikidataAttractions.length > 0) {
+    attributions.push({
+      label: "Wikidata",
+      url: "https://www.wikidata.org",
+      license: "CC0 1.0",
     });
   }
   if (country) {
