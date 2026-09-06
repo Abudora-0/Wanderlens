@@ -2,36 +2,46 @@
 
 import {
   Component,
-  Suspense,
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
+  type ComponentType,
   type ReactNode,
 } from "react";
-import dynamic from "next/dynamic";
 import { continents, type Continent } from "@/lib/continents";
 import type { PlaceLink } from "@/lib/types";
 import { GlobeSpinner } from "@/components/ui/GlobeSpinner";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 
-const Globe = dynamic(() => import("react-globe.gl"), { ssr: false });
+/**
+ * react-globe.gl is loaded imperatively, not through `next/dynamic`. `dynamic`
+ * (and `React.lazy`) suspend until the chunk lands, which bubbled to the
+ * page-level Suspense boundary and discarded + remounted all of ExploreView
+ * while the chunk was in flight, tearing down a half-initialised globe. That
+ * teardown hits globe.gl's `_destructor`, which throws "dispose is not a
+ * function" on current three builds (no upstream fix) and broke /explore on
+ * load. Loading it via a plain state update keeps the globe mounted once.
+ *
+ * The same throw still fires on a real unmount (navigating away from /explore);
+ * that path is recovered by app/global-error.tsx and the layout guard.
+ */
+type GlobeComponent = ComponentType<Record<string, unknown>>;
+let globeModulePromise: Promise<GlobeComponent> | null = null;
+function loadGlobe(): Promise<GlobeComponent> {
+  globeModulePromise ??= import("react-globe.gl").then(
+    (mod) => mod.default as unknown as GlobeComponent,
+  );
+  return globeModulePromise;
+}
 
 const RENDERER_CONFIG = {
   antialias: false,
   powerPreference: "high-performance" as const,
 };
 
-/**
- * Keeps the react-globe.gl load contained. `next/dynamic({ ssr: false })`
- * suspends until the chunk arrives; the local Suspense below catches that so the
- * surrounding ExploreView tree is not discarded and remounted (which used to
- * tear down a half-initialised globe and throw on load). GlobeBoundary is the
- * render-error fallback for anything the globe throws while mounted; the
- * teardown throw on unmount is handled higher up (app/global-error + the
- * layout guard) since it escapes as an uncaught error.
- */
+/** Render-error fallback for anything the globe throws while it is mounted. */
 class GlobeBoundary extends Component<
   { children: ReactNode; fallback: ReactNode },
   { failed: boolean }
@@ -92,15 +102,7 @@ export function Globe3D(props: Globe3DProps) {
         </div>
       }
     >
-      <Suspense
-        fallback={
-          <div className="grid h-full place-items-center">
-            <GlobeSpinner label="Loading the globe" />
-          </div>
-        }
-      >
-        <GlobeCanvas {...props} />
-      </Suspense>
+      <GlobeCanvas {...props} />
     </GlobeBoundary>
   );
 }
@@ -118,6 +120,19 @@ function GlobeCanvas({
   const wrapRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [features, setFeatures] = useState<CountryFeature[]>([]);
+  const [Globe, setGlobe] = useState<GlobeComponent | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadGlobe()
+      .then((component) => {
+        if (!cancelled) setGlobe(() => component);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -256,14 +271,16 @@ function GlobeCanvas({
     [markers],
   );
 
+  const ready = Globe !== null && size.width > 0;
+
   return (
     <div ref={wrapRef} className="relative h-full w-full">
-      {size.width === 0 && (
+      {!ready && (
         <div className="grid h-full place-items-center">
           <GlobeSpinner label="Loading the globe" />
         </div>
       )}
-      {size.width > 0 && (
+      {ready && Globe && (
         <Globe
           ref={globeRef as never}
           width={size.width}
