@@ -55,10 +55,10 @@ export function ExplorePanel({
         ))}
       </nav>
 
-      <div className="min-h-0 flex-1 pr-1 lg:overflow-y-auto lg:[scrollbar-width:thin]">
+      <div className="min-h-0 w-full min-w-0 flex-1 pr-1 lg:overflow-y-auto lg:[scrollbar-width:thin]">
         {showContinentPicker && (
           <Section title="Choose a continent">
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {continents.map((continent) => (
                 <Link
                   key={continent.id}
@@ -117,7 +117,7 @@ export function ExplorePanel({
 
             {node.regions.length > 0 && (
               <Section title="Regions">
-                <div className="grid gap-3">
+                <div className="grid grid-cols-1 gap-3">
                   {node.regions.map((region) => (
                     <Link
                       key={region.article}
@@ -196,7 +196,7 @@ function DestinationList({
   country: string | null;
 }) {
   return (
-    <div className="grid gap-3">
+    <div className="grid grid-cols-1 gap-3">
       {links.map((link) => (
         <Link
           key={link.name}
