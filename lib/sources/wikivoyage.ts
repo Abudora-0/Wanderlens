@@ -1,6 +1,12 @@
 import type { Attraction, AttractionCategory } from "@/lib/types";
 import { haversineKm } from "@/lib/format";
 import { timedFetch } from "@/lib/sources/http";
+import {
+  parseTemplateAt,
+  stripWikiMarkup,
+  toFields,
+  fetchWikivoyageSummary,
+} from "@/lib/sources/wikitext";
 
 interface ParseResponse {
   parse?: {
@@ -16,84 +22,6 @@ interface RawListing {
 }
 
 const LISTING_TOKENS = ["{{see", "{{do", "{{listing", "{{marker"];
-
-function stripTemplates(input: string): string {
-  let text = input;
-  for (let pass = 0; pass < 4; pass += 1) {
-    const next = text.replace(/\{\{([^{}]*)\}\}/g, (_match, body: string) => {
-      const parts = String(body).split("|");
-      const head = parts[0].trim().toLowerCase();
-      if (head === "lang" || head === "nihongo" || head === "transl") {
-        return parts[parts.length - 1] ?? "";
-      }
-      if (["convert", "nowrap", "small", "'"].includes(head)) {
-        return parts[1] ?? "";
-      }
-      return "";
-    });
-    if (next === text) break;
-    text = next;
-  }
-  return text;
-}
-
-function stripWikiMarkup(input: string): string {
-  return stripTemplates(input)
-    .replace(/<ref[^>]*>[\s\S]*?<\/ref>/gi, "")
-    .replace(/<ref[^>]*\/>/gi, "")
-    .replace(/<!--[\s\S]*?-->/g, "")
-    .replace(/\[\[(?:[^\]|]*\|)?([^\]]+)\]\]/g, "$1")
-    .replace(/\[https?:\/\/\S+\s+([^\]]+)\]/g, "$1")
-    .replace(/'''?/g, "")
-    .replace(/<[^>]+>/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function parseTemplateAt(source: string, start: number): { fields: string[]; end: number } | null {
-  let depth = 0;
-  let i = start;
-  const parts: string[] = [];
-  let current = "";
-  for (; i < source.length; i += 1) {
-    const two = source.slice(i, i + 2);
-    if (two === "{{" || two === "[[") {
-      depth += 1;
-      current += two;
-      i += 1;
-      continue;
-    }
-    if (two === "}}" || two === "]]") {
-      depth -= 1;
-      if (depth === 0 && two === "}}") {
-        parts.push(current);
-        return { fields: parts, end: i + 2 };
-      }
-      current += two;
-      i += 1;
-      continue;
-    }
-    if (source[i] === "|" && depth === 1) {
-      parts.push(current);
-      current = "";
-      continue;
-    }
-    current += source[i];
-  }
-  return null;
-}
-
-function toFields(rawParts: string[]): Record<string, string> {
-  const fields: Record<string, string> = {};
-  rawParts.slice(1).forEach((part) => {
-    const eq = part.indexOf("=");
-    if (eq === -1) return;
-    const key = part.slice(0, eq).trim().toLowerCase();
-    const value = part.slice(eq + 1).trim();
-    if (key) fields[key] = value;
-  });
-  return fields;
-}
 
 function extractListings(wikitext: string): RawListing[] {
   const listings: RawListing[] = [];
@@ -222,33 +150,7 @@ export async function getWikivoyageAttractions(
     });
   });
 
-  const summary = await getWikivoyageSummary(pageTitle);
+  const summary = await fetchWikivoyageSummary(pageTitle);
 
   return { attractions, summary, url: pageUrl };
-}
-
-async function getWikivoyageSummary(title: string): Promise<string | null> {
-  try {
-    const res = await timedFetch(
-      `https://en.wikivoyage.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`,
-      {
-        next: { revalidate: 86400 },
-        headers: { "User-Agent": "Wanderlens/1.0 (open-source travel discovery)" },
-      },
-    );
-    if (!res.ok) return null;
-    const data = (await res.json()) as { extract?: string };
-    const extract = data.extract?.trim();
-    if (!extract) return null;
-    if (extract.length <= 460) return extract;
-    const clipped = extract.slice(0, 460);
-    const lastStop = Math.max(
-      clipped.lastIndexOf(". "),
-      clipped.lastIndexOf("! "),
-    );
-    if (lastStop > 240) return clipped.slice(0, lastStop + 1);
-    return `${clipped.slice(0, clipped.lastIndexOf(" ")).trim()}...`;
-  } catch {
-    return null;
-  }
 }

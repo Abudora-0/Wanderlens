@@ -3,36 +3,52 @@
 import { motion } from "motion/react";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 
-const CENTER = 32;
-const LONG = 28;
-const SHORT = 13.5;
-const WAIST = 6;
-
-function pt(radius: number, angleDeg: number) {
-  const a = ((angleDeg - 90) * Math.PI) / 180;
-  return [CENTER + radius * Math.cos(a), CENTER + radius * Math.sin(a)] as const;
-}
-
-function starPath() {
-  const cmds: string[] = [];
-  for (let i = 0; i < 8; i += 1) {
-    const tipR = i % 2 === 0 ? LONG : SHORT;
-    const [tx, ty] = pt(tipR, i * 45);
-    const [wx, wy] = pt(WAIST, i * 45 + 22.5);
-    cmds.push(`${i === 0 ? "M" : "L"} ${tx.toFixed(2)} ${ty.toFixed(2)}`);
-    cmds.push(`L ${wx.toFixed(2)} ${wy.toFixed(2)}`);
-  }
-  cmds.push("Z");
-  return cmds.join(" ");
-}
-
-const STAR = starPath();
-
 interface LogoProps {
   size?: number;
   className?: string;
   animated?: boolean;
   title?: string;
+}
+
+/* Two identical land tiles sit side by side and scroll left forever, so land
+   masses appear to rotate around the sphere. Everything is clipped to the ocean
+   circle. */
+function LandTile({ dx }: { dx: number }) {
+  return (
+    <g transform={`translate(${dx} 0)`}>
+      <path
+        d="M8 20c4-3 9-2 11 1s-1 7-5 8-9 0-10-4 1-3 4-5z"
+        fill="var(--color-land)"
+      />
+      <path
+        d="M28 34c3-4 10-5 14-1s3 10-2 12-13 1-15-4 1-4 3-7z"
+        fill="#2ba05f"
+      />
+      <path
+        d="M20 44c2-2 6-2 7 1s-1 5-4 5-6-1-6-4 1-1 3-2z"
+        fill="var(--color-land)"
+      />
+      <path
+        d="M40 14c2-2 6-1 7 2s-2 5-5 5-5-2-5-4 1-2 3-3z"
+        fill="#2ba05f"
+      />
+      {/* thin meridian arcs travelling with the surface */}
+      <path
+        d="M14 8C10 20 10 44 14 56"
+        fill="none"
+        stroke="#dfeeff"
+        strokeOpacity="0.35"
+        strokeWidth="1"
+      />
+      <path
+        d="M34 6C29 20 29 44 34 58"
+        fill="none"
+        stroke="#dfeeff"
+        strokeOpacity="0.28"
+        strokeWidth="1"
+      />
+    </g>
+  );
 }
 
 export function Logo({
@@ -42,7 +58,7 @@ export function Logo({
   title = "Wanderlens",
 }: LogoProps) {
   const reducedMotion = usePrefersReducedMotion();
-  const shouldAnimate = animated && !reducedMotion;
+  const spin = animated && !reducedMotion;
 
   return (
     <motion.svg
@@ -52,63 +68,59 @@ export function Logo({
       className={className}
       role="img"
       aria-label={title}
-      initial={shouldAnimate ? { rotate: -68, scale: 0.62, opacity: 0 } : false}
-      animate={shouldAnimate ? { rotate: 0, scale: 1, opacity: 1 } : undefined}
-      transition={{ type: "spring", stiffness: 95, damping: 10, mass: 0.9 }}
+      initial={spin ? { rotate: -18, scale: 0.85, opacity: 0 } : false}
+      animate={spin ? { rotate: 0, scale: 1, opacity: 1 } : undefined}
+      transition={{ type: "spring", stiffness: 120, damping: 13 }}
     >
       <defs>
-        <linearGradient id="wl-star" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="var(--color-teal)" />
-          <stop offset="52%" stopColor="var(--color-iris)" />
-          <stop offset="100%" stopColor="var(--color-rose)" />
-        </linearGradient>
-        <radialGradient id="wl-core" cx="50%" cy="45%" r="60%">
-          <stop offset="0%" stopColor="var(--color-gold)" />
-          <stop offset="100%" stopColor="var(--color-ember)" />
+        <radialGradient id="wl-ocean" cx="37%" cy="33%" r="75%">
+          <stop offset="0%" stopColor="#57a8ff" />
+          <stop offset="55%" stopColor="var(--color-ocean)" />
+          <stop offset="100%" stopColor="#173f95" />
         </radialGradient>
+        <clipPath id="wl-sphere">
+          <circle cx="32" cy="32" r="25" />
+        </clipPath>
       </defs>
 
-      <motion.g
-        style={{ transformOrigin: "32px 32px" }}
-        animate={shouldAnimate ? { rotate: 360 } : undefined}
-        transition={
-          shouldAnimate
-            ? { duration: 64, ease: "linear", repeat: Infinity }
-            : undefined
-        }
-      >
-        {/* faint back star for depth */}
-        <path
-          d={STAR}
-          transform="rotate(45 32 32)"
-          fill="var(--color-iris)"
-          fillOpacity={0.16}
-        />
-        <path
-          d={STAR}
-          fill="url(#wl-star)"
-          stroke="var(--color-void)"
-          strokeWidth={1.4}
-          strokeLinejoin="round"
-        />
-      </motion.g>
+      <circle cx="32" cy="32" r="25" fill="url(#wl-ocean)" />
 
-      <motion.circle
+      <g clipPath="url(#wl-sphere)">
+        <motion.g
+          animate={spin ? { x: [0, -50] } : undefined}
+          transition={
+            spin
+              ? { duration: 14, ease: "linear", repeat: Infinity }
+              : undefined
+          }
+        >
+          <LandTile dx={0} />
+          <LandTile dx={50} />
+          <LandTile dx={-50} />
+        </motion.g>
+      </g>
+
+      {/* fixed graticule + rim */}
+      <ellipse
         cx="32"
         cy="32"
-        r="5"
-        fill="url(#wl-core)"
-        style={{ transformOrigin: "32px 32px" }}
-        initial={
-          shouldAnimate ? { scale: 0, opacity: 0 } : { scale: 1, opacity: 1 }
-        }
-        animate={shouldAnimate ? { scale: 1, opacity: 1 } : undefined}
-        transition={
-          shouldAnimate
-            ? { duration: 0.5, delay: 0.4, ease: [0.34, 1.56, 0.64, 1] }
-            : undefined
-        }
+        rx="25"
+        ry="8.5"
+        fill="none"
+        stroke="#eef0f8"
+        strokeOpacity="0.22"
+        strokeWidth="1"
       />
+      <circle
+        cx="32"
+        cy="32"
+        r="25"
+        fill="none"
+        stroke="var(--color-teal)"
+        strokeOpacity="0.55"
+        strokeWidth="1.6"
+      />
+      <circle cx="23" cy="21" r="3.2" fill="var(--color-gold)" fillOpacity="0.9" />
     </motion.svg>
   );
 }

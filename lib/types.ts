@@ -98,6 +98,29 @@ export interface DestinationDossier {
   partial: string[];
 }
 
+export type NodeKind = "continent" | "country" | "region" | "city" | "area";
+
+export interface PlaceLink {
+  /** Display name. */
+  name: string;
+  /** Wikivoyage article title to drill into next. */
+  article: string;
+  blurb: string;
+  latitude: number | null;
+  longitude: number | null;
+  accent?: string;
+}
+
+export interface PlaceNode {
+  title: string;
+  kind: NodeKind;
+  summary: string | null;
+  banner: string | null;
+  regions: PlaceLink[];
+  cities: PlaceLink[];
+  otherDestinations: PlaceLink[];
+}
+
 export interface Collection {
   id: string;
   title: string;

@@ -12,11 +12,14 @@
   --color-ink-soft: #b7bfd8;
   --color-ink-mute: #7c86a6;
 
-  --color-teal: #38e1c4;
-  --color-iris: #7c6cf5;
-  --color-rose: #f2668b;
+  /* Earth palette: land greens, sea blues, a teal shoreline, gold sun */
+  --color-teal: #34ddbb;
+  --color-iris: #2f7ff5; /* ocean blue (name kept for cascade) */
+  --color-rose: #34c26e; /* land green (name kept for cascade) */
+  --color-ocean: var(--color-iris);
+  --color-land: var(--color-rose);
   --color-gold: #f5c451;
-  --color-ember: #ff8a4c;
+  --color-ember: #ff9d4c;
 
   --font-display: var(--font-bricolage), "Bricolage Grotesque", system-ui, sans-serif;
   --font-sans: var(--font-sora), "Sora", system-ui, sans-serif;
@@ -27,9 +30,9 @@
 }
 
 :root {
-  --aurora-1: var(--color-teal);
-  --aurora-2: var(--color-iris);
-  --aurora-3: var(--color-rose);
+  --aurora-1: var(--color-land);
+  --aurora-2: var(--color-teal);
+  --aurora-3: var(--color-ocean);
   --page-progress: 0;
   color-scheme: dark;
 }
@@ -81,14 +84,14 @@ h4 {
   border-radius: 999px;
   border: 3px solid var(--color-abyss);
   background: linear-gradient(
-    var(--color-teal),
-    var(--color-iris) 55%,
-    var(--color-rose)
+    var(--color-land),
+    var(--color-teal) 55%,
+    var(--color-ocean)
   );
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(var(--color-iris), var(--color-rose));
+  background: linear-gradient(var(--color-teal), var(--color-ocean));
 }
 
 ::-webkit-scrollbar-corner {
@@ -130,7 +133,7 @@ h4 {
   left: -5%;
   width: 55vw;
   height: 55vw;
-  background: radial-gradient(circle, rgba(56, 225, 196, 0.5), transparent 68%);
+  background: radial-gradient(circle, rgba(52, 194, 110, 0.42), transparent 68%);
   animation: aurora-drift-1 42s var(--ease-lens) infinite alternate;
 }
 
@@ -139,7 +142,7 @@ h4 {
   right: -12%;
   width: 60vw;
   height: 60vw;
-  background: radial-gradient(circle, rgba(124, 108, 245, 0.45), transparent 68%);
+  background: radial-gradient(circle, rgba(47, 127, 245, 0.44), transparent 68%);
   animation: aurora-drift-2 55s var(--ease-lens) infinite alternate;
 }
 
@@ -148,7 +151,7 @@ h4 {
   left: 15%;
   width: 50vw;
   height: 50vw;
-  background: radial-gradient(circle, rgba(242, 102, 139, 0.4), transparent 68%);
+  background: radial-gradient(circle, rgba(52, 221, 187, 0.4), transparent 68%);
   animation: aurora-drift-3 48s var(--ease-lens) infinite alternate;
 }
 
@@ -157,7 +160,7 @@ h4 {
   right: 10%;
   width: 34vw;
   height: 34vw;
-  background: radial-gradient(circle, rgba(245, 196, 81, 0.28), transparent 70%);
+  background: radial-gradient(circle, rgba(245, 196, 81, 0.24), transparent 70%);
   animation: aurora-drift-1 60s var(--ease-lens) infinite alternate-reverse;
 }
 
@@ -194,6 +197,19 @@ h4 {
 }
 
 .focus-ring:focus-visible {
+  outline: 2px solid var(--color-teal);
+  outline-offset: 2px;
+}
+
+.footer-link {
+  color: var(--color-ink-soft);
+  border-radius: 4px;
+  transition: color 0.2s;
+}
+.footer-link:hover {
+  color: var(--color-teal);
+}
+.footer-link:focus-visible {
   outline: 2px solid var(--color-teal);
   outline-offset: 2px;
 }

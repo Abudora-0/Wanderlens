@@ -95,12 +95,14 @@ export function AttractionCard({
 }
 
 function PatternFallback({ seed }: { seed: string }) {
-  const hue = [...seed].reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360;
+  // Keep the placeholder wash inside the Earth palette: teal (170) to ocean (215).
+  const hue =
+    160 + ([...seed].reduce((acc, char) => acc + char.charCodeAt(0), 0) % 60);
   return (
     <div
       className="absolute inset-0"
       style={{
-        background: `radial-gradient(circle at 30% 30%, hsl(${hue} 60% 30%), var(--color-abyss) 70%)`,
+        background: `radial-gradient(circle at 30% 30%, hsl(${hue} 55% 26%), var(--color-abyss) 70%)`,
       }}
     >
       <svg className="h-full w-full opacity-30" aria-hidden>

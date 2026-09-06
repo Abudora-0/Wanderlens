@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import type { GeoCandidate } from "@/lib/types";
-import { useExperience } from "@/components/experience/store";
+import { destinationHref } from "@/lib/destination-link";
 
 const KIND_LABEL: Record<string, string> = {
   country: "Country",
@@ -16,11 +17,13 @@ const KIND_LABEL: Record<string, string> = {
 export function SearchField({
   size = "lg",
   autoFocus = false,
+  placeholder = "Search a city, country or region...",
 }: {
   size?: "lg" | "sm";
   autoFocus?: boolean;
+  placeholder?: string;
 }) {
-  const { select, selected } = useExperience();
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [candidates, setCandidates] = useState<GeoCandidate[]>([]);
   const [open, setOpen] = useState(false);
@@ -68,12 +71,6 @@ export function SearchField({
     [],
   );
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const next = event.target.value;
-    setQuery(next);
-    runSearch(next);
-  };
-
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
@@ -82,21 +79,26 @@ export function SearchField({
     return () => document.removeEventListener("mousedown", onClick);
   }, []);
 
-  // Keep the input text aligned with a selection made elsewhere (globe, hero
-  // chips, collections), using the documented render-phase sync pattern.
-  const [syncedSelectionId, setSyncedSelectionId] = useState<string | null>(
-    null,
-  );
-  if (selected && selected.id !== syncedSelectionId) {
-    setSyncedSelectionId(selected.id);
-    if (selected.displayName !== query) setQuery(selected.displayName);
-  }
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const next = event.target.value;
+    setQuery(next);
+    runSearch(next);
+  };
 
   const choose = (candidate: GeoCandidate | undefined) => {
     if (!candidate) return;
-    select(candidate);
-    setQuery(candidate.displayName);
     setOpen(false);
+    setQuery(candidate.displayName);
+    router.push(
+      destinationHref({
+        name: candidate.name,
+        country: candidate.country || undefined,
+        latitude: candidate.latitude,
+        longitude: candidate.longitude,
+        countryCode: candidate.countryCode,
+        kind: candidate.kind === "landmark" ? "area" : candidate.kind,
+      }),
+    );
   };
 
   const onKeyDown = (event: React.KeyboardEvent) => {
@@ -123,8 +125,8 @@ export function SearchField({
   return (
     <div ref={rootRef} className="relative w-full">
       <div
-        className={`group flex items-center gap-3 rounded-2xl border border-[var(--color-hairline)] bg-[color-mix(in_oklab,var(--color-surface)_88%,transparent)] transition-colors focus-within:border-[var(--color-iris)] ${
-          big ? "px-5 py-4" : "px-4 py-2.5"
+        className={`group flex items-center gap-3 rounded-2xl border border-[var(--color-hairline)] bg-[color-mix(in_oklab,var(--color-surface)_88%,transparent)] transition-colors focus-within:border-[var(--color-ocean)] ${
+          big ? "px-4 py-3.5 sm:px-5 sm:py-4" : "px-4 py-2.5"
         }`}
       >
         <SearchGlyph spinning={loading} big={big} />
@@ -139,9 +141,9 @@ export function SearchField({
           aria-expanded={open}
           aria-controls={listId}
           aria-autocomplete="list"
-          placeholder="Try Kyoto, Patagonia, Kerala, Lisbon..."
+          placeholder={placeholder}
           className={`w-full bg-transparent text-[var(--color-ink)] placeholder:text-[var(--color-ink-mute)] focus:outline-none ${
-            big ? "text-lg" : "text-sm"
+            big ? "text-base sm:text-lg" : "text-sm"
           }`}
         />
         {query && (
@@ -178,14 +180,18 @@ export function SearchField({
             className="absolute z-40 mt-2 max-h-80 w-full overflow-auto rounded-2xl border border-[var(--color-hairline)] bg-[var(--color-surface-raised)] p-1.5 shadow-[var(--shadow-lift)]"
           >
             {candidates.map((candidate, index) => (
-              <li key={candidate.id} role="option" aria-selected={index === activeIndex}>
+              <li
+                key={candidate.id}
+                role="option"
+                aria-selected={index === activeIndex}
+              >
                 <button
                   type="button"
                   onMouseEnter={() => setActiveIndex(index)}
                   onClick={() => choose(candidate)}
                   className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${
                     index === activeIndex
-                      ? "bg-[color-mix(in_oklab,var(--color-iris)_20%,transparent)]"
+                      ? "bg-[color-mix(in_oklab,var(--color-ocean)_20%,transparent)]"
                       : ""
                   }`}
                 >
@@ -240,7 +246,7 @@ function SearchGlyph({ spinning, big }: { spinning: boolean; big: boolean }) {
         strokeWidth="1.8"
         strokeLinecap="round"
       />
-      <circle cx="9.5" cy="9.5" r="2" fill="var(--color-iris)" />
+      <circle cx="9.5" cy="9.5" r="2" fill="var(--color-ocean)" />
     </motion.svg>
   );
 }

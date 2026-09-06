@@ -17,25 +17,31 @@ export default function OpengraphImage() {
           justifyContent: "space-between",
           padding: "80px",
           background:
-            "radial-gradient(1000px circle at 20% 0%, #16224a, #05070f 60%)",
+            "radial-gradient(1100px circle at 22% 0%, #0f3b52, #05070f 62%)",
           color: "#eef0f8",
           fontFamily: "sans-serif",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <svg width="64" height="64" viewBox="0 0 64 64">
+          <svg width="66" height="66" viewBox="0 0 64 64">
             <defs>
-              <linearGradient id="og-star" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#38e1c4" />
-                <stop offset="52%" stopColor="#7c6cf5" />
-                <stop offset="100%" stopColor="#f2668b" />
-              </linearGradient>
+              <radialGradient id="og-ocean" cx="37%" cy="33%" r="75%">
+                <stop offset="0%" stopColor="#57a8ff" />
+                <stop offset="55%" stopColor="#2f7ff5" />
+                <stop offset="100%" stopColor="#173f95" />
+              </radialGradient>
+              <clipPath id="og-sphere">
+                <circle cx="32" cy="32" r="25" />
+              </clipPath>
             </defs>
-            <path
-              d="M 32.00 4.00 L 34.30 26.46 L 41.55 22.45 L 37.54 29.70 L 60.00 32.00 L 37.54 34.30 L 41.55 41.55 L 34.30 37.54 L 32.00 60.00 L 29.70 37.54 L 22.45 41.55 L 26.46 34.30 L 4.00 32.00 L 26.46 29.70 L 22.45 22.45 L 29.70 26.46 Z"
-              fill="url(#og-star)"
-            />
-            <circle cx="32" cy="32" r="5" fill="#f5c451" />
+            <circle cx="32" cy="32" r="25" fill="url(#og-ocean)" />
+            <g clipPath="url(#og-sphere)">
+              <path d="M8 20c4-3 9-2 11 1s-1 7-5 8-9 0-10-4 1-3 4-5z" fill="#34c26e" />
+              <path d="M28 34c3-4 10-5 14-1s3 10-2 12-13 1-15-4 1-4 3-7z" fill="#2ba05f" />
+              <path d="M40 14c2-2 6-1 7 2s-2 5-5 5-5-2-5-4 1-2 3-3z" fill="#2ba05f" />
+            </g>
+            <circle cx="32" cy="32" r="25" fill="none" stroke="#34ddbb" strokeOpacity="0.55" strokeWidth="1.6" />
+            <circle cx="23" cy="21" r="3.2" fill="#f5c451" fillOpacity="0.9" />
           </svg>
           <div style={{ fontSize: 34, fontWeight: 600, letterSpacing: -1 }}>
             Wanderlens

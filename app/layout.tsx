@@ -3,6 +3,8 @@ import { Bricolage_Grotesque, Sora } from "next/font/google";
 import "./globals.css";
 import { Cursor } from "@/components/ui/Cursor";
 import { ScrollProgress } from "@/components/ui/ScrollProgress";
+import { SiteHeader } from "@/components/site/SiteHeader";
+import { SiteFooter } from "@/components/site/SiteFooter";
 
 const bricolage = Bricolage_Grotesque({
   variable: "--font-bricolage",
@@ -62,10 +64,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${bricolage.variable} ${sora.variable} h-full`}
       suppressHydrationWarning
     >
-      <body className="grain min-h-full">
+      <body className="grain flex min-h-full flex-col">
         <ScrollProgress />
         <Cursor />
-        {children}
+        <SiteHeader />
+        <main className="flex-1">{children}</main>
+        <SiteFooter />
       </body>
     </html>
   );

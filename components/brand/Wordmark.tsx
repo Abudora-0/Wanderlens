@@ -47,7 +47,7 @@ export function Wordmark({
             className="absolute -bottom-0.5 right-0 block h-[2px] w-[1.9em] origin-right rounded-full"
             style={{
               background:
-                "linear-gradient(90deg, var(--color-teal), var(--color-iris) 55%, var(--color-rose))",
+                "linear-gradient(90deg, var(--color-land), var(--color-teal) 55%, var(--color-ocean))",
             }}
             initial={animate ? { scaleX: 0, opacity: 0 } : false}
             animate={animate ? { scaleX: 1, opacity: 1 } : undefined}

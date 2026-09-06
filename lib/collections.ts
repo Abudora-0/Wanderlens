@@ -5,7 +5,7 @@ export const collections: Collection[] = [
     id: "coastlines",
     title: "Cut by the coast",
     tagline: "Cliff roads, tide pools and harbour towns that glow at dusk.",
-    accent: "#38e1c4",
+    accent: "#34ddbb",
     places: [
       {
         name: "Amalfi",
@@ -41,7 +41,7 @@ export const collections: Collection[] = [
     id: "ancient",
     title: "Older than memory",
     tagline: "Cities where every wall has been standing for a thousand years.",
-    accent: "#c9a227",
+    accent: "#f5c451",
     places: [
       {
         name: "Petra",
@@ -77,7 +77,7 @@ export const collections: Collection[] = [
     id: "wild-north",
     title: "The wild north",
     tagline: "Aurora, fjords and long light above the sixtieth parallel.",
-    accent: "#7c6cf5",
+    accent: "#2f7ff5",
     places: [
       {
         name: "Tromso",
@@ -113,7 +113,7 @@ export const collections: Collection[] = [
     id: "high-places",
     title: "Thin air",
     tagline: "Trails, passes and villages where the mountains take over.",
-    accent: "#f2668b",
+    accent: "#34c26e",
     places: [
       {
         name: "Pokhara",
