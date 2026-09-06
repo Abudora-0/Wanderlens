@@ -1,14 +1,25 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { motion } from "motion/react";
 import { AuroraField } from "@/components/home/AuroraField";
-import { MiniGlobe } from "@/components/globe/MiniGlobe";
 import { SearchField } from "@/components/search/SearchField";
 import { destinationHref } from "@/lib/destination-link";
 import { staggerParent, wordReveal, fadeUp } from "@/lib/motion";
 
-const HEADLINE = ["Spin", "the", "globe.", "Find", "where", "to", "go."];
+const EarthGlobe = dynamic(
+  () => import("@/components/globe/EarthGlobe").then((m) => m.EarthGlobe),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="mx-auto aspect-square w-full max-w-[420px] rounded-full bg-[radial-gradient(circle_at_34%_30%,#2f7fd8,#0c2f66_70%)] opacity-60" />
+    ),
+  },
+);
+
+const LINE_ONE = ["Spin", "the", "globe."];
+const LINE_TWO = ["Find", "where", "to", "go."];
 
 const QUICK = [
   { name: "Kyoto", country: "Japan", latitude: 35.0116, longitude: 135.7681 },
@@ -18,18 +29,30 @@ const QUICK = [
   { name: "Reykjavik", country: "Iceland", latitude: 64.147, longitude: -21.94 },
 ];
 
+function Word({ word }: { word: string }) {
+  return (
+    <motion.span variants={wordReveal} className="mr-[0.24em] inline-block">
+      {word === "globe." ? (
+        <span className="text-aurora">{word}</span>
+      ) : (
+        word
+      )}
+    </motion.span>
+  );
+}
+
 export function Hero() {
   return (
     <section className="relative isolate overflow-hidden">
       <AuroraField />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[var(--color-void)]" />
 
-      <div className="relative mx-auto grid min-h-[92vh] w-full max-w-6xl items-center gap-10 px-5 pb-16 pt-28 lg:grid-cols-[1.05fr_0.95fr] lg:pt-24">
+      <div className="relative mx-auto grid min-h-[90vh] w-full max-w-6xl items-center gap-10 px-5 pb-16 pt-28 lg:grid-cols-[minmax(0,1fr)_minmax(0,460px)] lg:gap-16 lg:pt-24 xl:gap-24">
         <motion.div
           variants={staggerParent}
           initial="hidden"
           animate="show"
-          className="max-w-xl"
+          className="min-w-0"
         >
           <motion.p
             variants={fadeUp}
@@ -40,22 +63,19 @@ export function Hero() {
           </motion.p>
 
           <h1
-            className="font-display text-[clamp(2.4rem,7vw,3.9rem)] leading-[1.04] text-[var(--color-ink)]"
+            className="font-display text-[clamp(2.3rem,6vw,3.6rem)] leading-[1.05] text-[var(--color-ink)]"
             style={{ perspective: 800 }}
           >
-            {HEADLINE.map((word, index) => (
-              <motion.span
-                key={`${word}-${index}`}
-                variants={wordReveal}
-                className="mr-[0.26em] inline-block"
-              >
-                {word === "globe." ? (
-                  <span className="text-aurora">{word}</span>
-                ) : (
-                  word
-                )}
-              </motion.span>
-            ))}
+            <span className="block">
+              {LINE_ONE.map((w, i) => (
+                <Word key={i} word={w} />
+              ))}
+            </span>
+            <span className="block">
+              {LINE_TWO.map((w, i) => (
+                <Word key={i} word={w} />
+              ))}
+            </span>
           </h1>
 
           <motion.p
@@ -67,7 +87,7 @@ export function Hero() {
             with live weather and country context on arrival.
           </motion.p>
 
-          <motion.div variants={fadeUp} className="mt-8">
+          <motion.div variants={fadeUp} className="mt-8 max-w-lg">
             <SearchField />
           </motion.div>
 
@@ -110,9 +130,9 @@ export function Hero() {
           initial={{ opacity: 0, scale: 0.92 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
-          className="relative flex items-center justify-center py-2"
+          className="relative flex items-center justify-center"
         >
-          <MiniGlobe />
+          <EarthGlobe />
         </motion.div>
       </div>
     </section>

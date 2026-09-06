@@ -8,7 +8,7 @@ import { destinationHref } from "@/lib/destination-link";
 import type { NodeKind, PlaceNode } from "@/lib/types";
 import { ExplorePanel } from "@/components/explore/ExplorePanel";
 import { Globe3D, type GlobeMarker } from "@/components/explore/Globe3D";
-import { MiniGlobe } from "@/components/globe/MiniGlobe";
+import { EarthGlobe } from "@/components/globe/EarthGlobe";
 
 interface CountryFeature {
   properties: {
@@ -187,7 +187,7 @@ export function ExploreView() {
             />
           ) : (
             <div className="grid h-full place-items-center p-6">
-              <MiniGlobe />
+              <EarthGlobe />
             </div>
           )}
           {isDesktop && !continent && (
