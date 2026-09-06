@@ -173,6 +173,46 @@ export async function getWikipediaNearby(
     });
 }
 
+/** Find a representative image for a place by full-text searching Wikipedia. */
+export async function getWikipediaImageBySearch(
+  query: string,
+): Promise<{ image: string | null; url: string | null }> {
+  const url = new URL("https://en.wikipedia.org/w/api.php");
+  url.searchParams.set("action", "query");
+  url.searchParams.set("generator", "search");
+  url.searchParams.set("gsrsearch", query);
+  url.searchParams.set("gsrlimit", "1");
+  url.searchParams.set("prop", "pageimages|info");
+  url.searchParams.set("piprop", "thumbnail");
+  url.searchParams.set("pithumbsize", "640");
+  url.searchParams.set("inprop", "url");
+  url.searchParams.set("format", "json");
+  url.searchParams.set("formatversion", "2");
+
+  try {
+    const res = await timedFetch(url, {
+      next: { revalidate: 86400 },
+      headers: { "User-Agent": "Wanderlens/1.0 (open-source travel discovery)" },
+    });
+    if (!res.ok) return { image: null, url: null };
+    const data = (await res.json()) as {
+      query?: {
+        pages?: {
+          thumbnail?: { source?: string };
+          fullurl?: string;
+        }[];
+      };
+    };
+    const page = data.query?.pages?.[0];
+    return {
+      image: page?.thumbnail?.source ?? null,
+      url: page?.fullurl ?? null,
+    };
+  } catch {
+    return { image: null, url: null };
+  }
+}
+
 export async function getWikipediaSummary(
   title: string,
 ): Promise<{ summary: string | null; image: string | null; url: string | null }> {
@@ -184,13 +224,24 @@ export async function getWikipediaSummary(
   if (!res.ok) return { summary: null, image: null, url: null };
   const data = (await res.json()) as {
     extract?: string;
-    originalimage?: { source?: string };
+    originalimage?: { source?: string; width?: number };
     thumbnail?: { source?: string };
     content_urls?: { desktop?: { page?: string } };
   };
+  // Prefer an upscaled thumbnail (fast) over the full original (can be many MB).
+  const thumb = data.thumbnail?.source?.replace(
+    /\/(\d{2,4})px-/,
+    (_m, n) => `/${Math.min(Number(n) * 2, 960)}px-`,
+  );
   return {
     summary: data.extract ?? null,
-    image: data.originalimage?.source ?? data.thumbnail?.source ?? null,
+    image:
+      thumb ??
+      ((data.originalimage?.width ?? 9999) <= 1600
+        ? data.originalimage?.source
+        : null) ??
+      data.thumbnail?.source ??
+      null,
     url: data.content_urls?.desktop?.page ?? null,
   };
 }

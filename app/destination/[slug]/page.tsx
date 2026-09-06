@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { geocode } from "@/lib/sources/geocode";
 import { buildDossier } from "@/lib/destination";
 import { DestinationDossier } from "@/components/destination/DestinationDossier";
+import { DestinationRetry } from "@/components/destination/DestinationRetry";
 import type { PlaceKind } from "@/lib/types";
 
 export const revalidate = 3600;
@@ -16,10 +17,18 @@ function first(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
+function titleCase(value: string): string {
+  return value.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+type Resolved =
+  | { ok: true; name: string; lat: number; lon: number; country: string | null; cc: string | null; kind: PlaceKind }
+  | { ok: false; reason: "missing" | "transient"; name: string };
+
 async function resolvePlace(
   slug: string,
   sp: Record<string, string | string[] | undefined>,
-) {
+): Promise<Resolved> {
   const nameParam = first(sp.name);
   let name = (nameParam ?? slug.replace(/-/g, " ")).trim();
   let country = first(sp.country) ?? null;
@@ -28,37 +37,44 @@ async function resolvePlace(
   const kind: PlaceKind =
     kindParam && KINDS.includes(kindParam) ? kindParam : "city";
 
-  let lat = Number.parseFloat(first(sp.lat) ?? "");
-  let lon = Number.parseFloat(first(sp.lon) ?? "");
-
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-    // Build progressively shorter queries from the slug: the trailing words are
-    // usually the country, so "delhi india" -> ["delhi india", "delhi"].
-    const words = (nameParam ?? slug.replace(/-/g, " ")).trim().split(/\s+/);
-    const queries: string[] = [];
-    if (country) queries.push(`${name} ${country}`);
-    for (let take = words.length; take >= 1; take -= 1) {
-      queries.push(words.slice(0, take).join(" "));
-    }
-
-    let hit = null;
-    for (const query of [...new Set(queries)]) {
-      const hits = await geocode(query);
-      if (hits[0]) {
-        hit = hits[0];
-        break;
-      }
-    }
-    if (!hit) return null;
-
-    lat = hit.latitude;
-    lon = hit.longitude;
-    cc = cc ?? hit.countryCode;
-    country = country ?? hit.country ?? null;
-    if (!nameParam) name = hit.name;
+  const lat = Number.parseFloat(first(sp.lat) ?? "");
+  const lon = Number.parseFloat(first(sp.lon) ?? "");
+  if (Number.isFinite(lat) && Number.isFinite(lon)) {
+    return { ok: true, name, lat, lon, country, cc, kind };
   }
 
-  return { name, lat, lon, country, cc, kind };
+  const words = (nameParam ?? slug.replace(/-/g, " ")).trim().split(/\s+/);
+  const queries = new Set<string>();
+  if (country) queries.add(`${name} ${country}`);
+  for (let take = Math.min(words.length, 4); take >= 1; take -= 1) {
+    queries.add(words.slice(0, take).join(" "));
+  }
+
+  let threw = false;
+  for (const query of queries) {
+    try {
+      const hits = await geocode(query);
+      if (hits[0]) {
+        const hit = hits[0];
+        cc = cc ?? hit.countryCode;
+        country = country ?? hit.country ?? null;
+        if (!nameParam) name = hit.name;
+        return {
+          ok: true,
+          name,
+          lat: hit.latitude,
+          lon: hit.longitude,
+          country,
+          cc,
+          kind,
+        };
+      }
+    } catch {
+      threw = true;
+    }
+  }
+
+  return { ok: false, reason: threw ? "transient" : "missing", name: titleCase(name) };
 }
 
 export async function generateMetadata({
@@ -70,10 +86,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const sp = await searchParams;
-  const name = (first(sp.name) ?? slug.replace(/-/g, " ")).replace(
-    /\b\w/g,
-    (c) => c.toUpperCase(),
-  );
+  const name = titleCase(first(sp.name) ?? slug.replace(/-/g, " "));
   return {
     title: `${name} - places to visit`,
     description: `The best places to visit in ${name}, with live weather and country context. Curated from open travel guides.`,
@@ -90,19 +103,32 @@ export default async function DestinationPage({
   const { slug } = await params;
   const sp = await searchParams;
   const resolved = await resolvePlace(slug, sp);
-  if (!resolved) notFound();
 
-  const dossier = await buildDossier({
-    name: resolved.name,
-    displayName: resolved.country
-      ? `${resolved.name}, ${resolved.country}`
-      : resolved.name,
-    latitude: resolved.lat,
-    longitude: resolved.lon,
-    kind: resolved.kind,
-    countryCode: resolved.cc,
-    country: resolved.country,
-  });
+  if (!resolved.ok) {
+    if (resolved.reason === "missing") notFound();
+    return <DestinationRetry name={resolved.name} />;
+  }
+
+  let dossier;
+  try {
+    dossier = await buildDossier({
+      name: resolved.name,
+      displayName: resolved.country
+        ? `${resolved.name}, ${resolved.country}`
+        : resolved.name,
+      latitude: resolved.lat,
+      longitude: resolved.lon,
+      kind: resolved.kind,
+      countryCode: resolved.cc,
+      country: resolved.country,
+    });
+  } catch {
+    return <DestinationRetry name={titleCase(resolved.name)} />;
+  }
+
+  if (dossier.attractions.length === 0) {
+    return <DestinationRetry name={titleCase(resolved.name)} />;
+  }
 
   return (
     <div className="mx-auto w-full max-w-6xl px-5 pb-28 pt-28">

@@ -5,7 +5,11 @@ import type {
   PlaceKind,
 } from "@/lib/types";
 import { getWikivoyageAttractions } from "@/lib/sources/wikivoyage";
-import { getWikipediaNearby, getWikipediaSummary } from "@/lib/sources/wikipedia";
+import {
+  getWikipediaNearby,
+  getWikipediaSummary,
+  getWikipediaImageBySearch,
+} from "@/lib/sources/wikipedia";
 import { getCountryByCode, getCountryByName } from "@/lib/sources/countries";
 import { getWeather } from "@/lib/sources/weather";
 import { normalizeDashes } from "@/lib/format";
@@ -162,6 +166,25 @@ export async function buildDossier(input: BuildInput): Promise<DestinationDossie
     title: normalizeDashes(item.title),
     blurb: normalizeDashes(item.blurb),
   }));
+
+  // Backfill images for the top ranked spots that still lack one, but only if the
+  // primary sources delivered at all (never pile requests onto a failed fetch).
+  if (attractions.length > 0) {
+    await Promise.all(
+      attractions
+        .filter((item) => !item.image)
+        .slice(0, 8)
+        .map(async (item) => {
+          const found = await getWikipediaImageBySearch(
+            `${item.title} ${input.name}`,
+          );
+          if (found.image) {
+            item.image = found.image;
+            item.url = item.url ?? found.url;
+          }
+        }),
+    );
+  }
 
   if (summary) summary = normalizeDashes(summary);
 

@@ -10,6 +10,7 @@ import {
   toFields,
 } from "@/lib/sources/wikitext";
 import { coordsForWikidata } from "@/lib/sources/wikidata";
+import { geocode } from "@/lib/sources/geocode";
 
 function commonsImage(fileName: string, width = 1600): string {
   const clean = fileName.replace(/^(file|image):/i, "").trim();
@@ -85,19 +86,45 @@ function markersToLinks(section: string): PlaceLink[] {
   }));
 }
 
-async function backfillCoords(links: PlaceLink[]): Promise<PlaceLink[]> {
-  const needing = links.filter(
-    (l) => l.latitude === null && l.accent?.startsWith("Q"),
-  );
+/**
+ * Fill in coordinates so every destination link is directly openable without a
+ * downstream geocode. Wikidata first (exact), then Open-Meteo by name.
+ */
+async function backfillCoords(
+  links: PlaceLink[],
+  contextName: string,
+): Promise<PlaceLink[]> {
   await Promise.all(
-    needing.slice(0, 8).map(async (link) => {
-      const coords = await coordsForWikidata(link.accent as string);
-      if (coords) {
-        link.latitude = coords.latitude;
-        link.longitude = coords.longitude;
-      }
-    }),
+    links
+      .filter((l) => l.latitude === null && l.accent?.startsWith("Q"))
+      .slice(0, 12)
+      .map(async (link) => {
+        const coords = await coordsForWikidata(link.accent as string);
+        if (coords) {
+          link.latitude = coords.latitude;
+          link.longitude = coords.longitude;
+        }
+      }),
   );
+
+  await Promise.all(
+    links
+      .filter((l) => l.latitude === null)
+      .slice(0, 12)
+      .map(async (link) => {
+        try {
+          const hits = await geocode(`${link.name} ${contextName}`.trim());
+          const hit = hits[0] ?? (await geocode(link.name))[0];
+          if (hit) {
+            link.latitude = hit.latitude;
+            link.longitude = hit.longitude;
+          }
+        } catch {
+          // leave it null; the destination page will resolve it lazily
+        }
+      }),
+  );
+
   return links.map((l) => ({
     ...l,
     accent: l.accent?.startsWith("Q") ? undefined : l.accent,
@@ -127,8 +154,8 @@ export async function getPlaceNode(
   }
 
   const [cities, other] = await Promise.all([
-    backfillCoords(markersToLinks(citiesSection)),
-    backfillCoords(markersToLinks(otherSection)),
+    backfillCoords(markersToLinks(citiesSection), article.title),
+    backfillCoords(markersToLinks(otherSection), article.title),
   ]);
 
   const kind: NodeKind =

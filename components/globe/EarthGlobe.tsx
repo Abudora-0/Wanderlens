@@ -15,8 +15,8 @@ void main() {
 const ATMOSPHERE_FRAG = `
 varying vec3 vNormal;
 void main() {
-  float intensity = pow(0.68 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.6);
-  gl_FragColor = vec4(0.22, 0.82, 0.74, 1.0) * intensity;
+  float intensity = pow(0.62 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 3.2);
+  gl_FragColor = vec4(0.2, 0.8, 0.78, 1.0) * clamp(intensity, 0.0, 1.0);
 }`;
 
 /**
@@ -44,8 +44,10 @@ export function EarthGlobe() {
     mount.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 100);
-    camera.position.z = 3.15;
+    const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
+    // Pulled back so the sphere fills ~74% of the frame and the atmosphere
+    // shell has room to bloom instead of being clipped by the canvas edges.
+    camera.position.z = 4.35;
 
     const group = new THREE.Group();
     group.rotation.set(0.35, -0.6, 0);
@@ -89,7 +91,7 @@ export function EarthGlobe() {
 
     // Atmosphere
     const atmosphere = new THREE.Mesh(
-      new THREE.SphereGeometry(1.14, 64, 64),
+      new THREE.SphereGeometry(1.22, 64, 64),
       new THREE.ShaderMaterial({
         vertexShader: ATMOSPHERE_VERT,
         fragmentShader: ATMOSPHERE_FRAG,
@@ -211,11 +213,11 @@ export function EarthGlobe() {
   }, [router, reducedMotion]);
 
   return (
-    <div className="relative mx-auto aspect-square w-full max-w-[420px]">
+    <div className="relative mx-auto aspect-square w-full max-w-[440px]">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-[8%] rounded-full"
-        style={{ boxShadow: "0 0 90px -10px rgba(52,221,187,0.4)" }}
+        className="pointer-events-none absolute inset-[18%] rounded-full"
+        style={{ boxShadow: "0 0 120px 4px rgba(52,221,187,0.28)" }}
       />
       <div
         ref={mountRef}
@@ -225,9 +227,9 @@ export function EarthGlobe() {
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") router.push("/explore");
         }}
-        className="focus-ring relative h-full w-full select-none rounded-full"
+        className="focus-ring relative h-full w-full select-none"
       />
-      <p className="pointer-events-none absolute inset-x-0 -bottom-2 text-center text-[10px] uppercase tracking-[0.22em] text-[var(--color-ink-mute)]">
+      <p className="pointer-events-none absolute inset-x-0 -bottom-3 text-center text-[10px] uppercase tracking-[0.22em] text-[var(--color-ink-mute)]">
         Drag to spin, tap to open the map
       </p>
     </div>
