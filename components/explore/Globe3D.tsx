@@ -1,25 +1,58 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Component,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import dynamic from "next/dynamic";
 import { continents, type Continent } from "@/lib/continents";
 import type { PlaceLink } from "@/lib/types";
 import { GlobeSpinner } from "@/components/ui/GlobeSpinner";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 
-const Globe = dynamic(() => import("react-globe.gl"), {
-  ssr: false,
-  loading: () => (
-    <div className="grid h-full place-items-center">
-      <GlobeSpinner label="Loading the globe" />
-    </div>
-  ),
-});
+const Globe = dynamic(() => import("react-globe.gl"), { ssr: false });
 
 const RENDERER_CONFIG = {
   antialias: false,
   powerPreference: "high-performance" as const,
 };
+
+/**
+ * Keeps the react-globe.gl load contained. `next/dynamic({ ssr: false })`
+ * suspends until the chunk arrives; the local Suspense below catches that so the
+ * surrounding ExploreView tree is not discarded and remounted (which used to
+ * tear down a half-initialised globe and throw on load). GlobeBoundary is the
+ * render-error fallback for anything the globe throws while mounted; the
+ * teardown throw on unmount is handled higher up (app/global-error + the
+ * layout guard) since it escapes as an uncaught error.
+ */
+class GlobeBoundary extends Component<
+  { children: ReactNode; fallback: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: unknown) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("globe boundary caught", error);
+    }
+  }
+
+  render() {
+    if (this.state.failed) return this.props.fallback;
+    return this.props.children;
+  }
+}
 
 interface CountryFeature {
   properties: Record<string, unknown>;
@@ -50,7 +83,29 @@ interface Globe3DProps {
   onSelectMarker: (marker: GlobeMarker) => void;
 }
 
-export function Globe3D({
+export function Globe3D(props: Globe3DProps) {
+  return (
+    <GlobeBoundary
+      fallback={
+        <div className="grid h-full place-items-center px-6 text-center text-xs uppercase tracking-[0.18em] text-[var(--color-ink-mute)]">
+          The globe stepped out. Use the list to keep exploring.
+        </div>
+      }
+    >
+      <Suspense
+        fallback={
+          <div className="grid h-full place-items-center">
+            <GlobeSpinner label="Loading the globe" />
+          </div>
+        }
+      >
+        <GlobeCanvas {...props} />
+      </Suspense>
+    </GlobeBoundary>
+  );
+}
+
+function GlobeCanvas({
   continent,
   activeCountry,
   markers,
@@ -179,8 +234,7 @@ export function Globe3D({
   const onPolygonClick = useCallback(
     (f: object) => {
       const props = (f as CountryFeature).properties;
-      const name =
-        (props.ADMIN as string) || (props.NAME as string) || "";
+      const name = (props.ADMIN as string) || (props.NAME as string) || "";
       if (!name) return;
       if (!continent) {
         const cont = continents.find((c) =>
@@ -204,6 +258,11 @@ export function Globe3D({
 
   return (
     <div ref={wrapRef} className="relative h-full w-full">
+      {size.width === 0 && (
+        <div className="grid h-full place-items-center">
+          <GlobeSpinner label="Loading the globe" />
+        </div>
+      )}
       {size.width > 0 && (
         <Globe
           ref={globeRef as never}

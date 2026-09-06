@@ -4,6 +4,7 @@ import "./globals.css";
 import { ScrollProgress } from "@/components/ui/ScrollProgress";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { GlobeTeardownGuard } from "@/components/globe/GlobeTeardownGuard";
 
 const bricolage = Bricolage_Grotesque({
   variable: "--font-bricolage",
@@ -64,6 +65,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
     >
       <body className="grain flex min-h-full flex-col">
+        <GlobeTeardownGuard />
         <ScrollProgress />
         <SiteHeader />
         <main className="flex-1">{children}</main>
