@@ -66,7 +66,7 @@ function parseBulletLinks(section: string): PlaceLink[] {
     out.push({
       name: (m[2] ?? m[1]).trim(),
       article,
-      blurb: stripWikiMarkup(after.replace(/^\s*[-–—:]\s*/, "")),
+      blurb: stripWikiMarkup(after.replace(/^\s*[-:–—]\s*/, "")),
       latitude: null,
       longitude: null,
     });

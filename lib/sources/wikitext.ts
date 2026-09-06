@@ -133,7 +133,7 @@ export function extractMarkers(wikitext: string, tokens = ["{{marker", "{{city",
 
     // trailing "  description" or " - description" up to the line end
     const after = wikitext.slice(parsed.end, parsed.end + 320);
-    const dash = after.match(/^\s*(?:[-–—:]\s*)?([^\n*]+)/);
+    const dash = after.match(/^\s*(?:[-:–—]\s*)?([^\n*]+)/);
     const blurb = dash ? stripWikiMarkup(dash[1]) : "";
 
     const lat = Number.parseFloat(fields.lat ?? "");
