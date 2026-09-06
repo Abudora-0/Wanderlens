@@ -55,7 +55,7 @@ export function ExplorePanel({
         ))}
       </nav>
 
-      <div className="min-h-0 flex-1 overflow-y-auto pr-1 [scrollbar-width:thin]">
+      <div className="min-h-0 flex-1 pr-1 lg:overflow-y-auto lg:[scrollbar-width:thin]">
         {showContinentPicker && (
           <Section title="Choose a continent">
             <div className="grid gap-3 sm:grid-cols-2">

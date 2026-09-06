@@ -7,17 +7,18 @@
     </radialGradient>
     <clipPath id="s"><circle cx="32" cy="32" r="25"/></clipPath>
   </defs>
-  <rect width="64" height="64" rx="14" fill="#05070f"/>
-  <circle cx="32" cy="32" r="25" fill="url(#o)"/>
-  <g clip-path="url(#s)">
-    <path d="M8 20c4-3 9-2 11 1s-1 7-5 8-9 0-10-4 1-3 4-5z" fill="#34c26e"/>
-    <path d="M28 34c3-4 10-5 14-1s3 10-2 12-13 1-15-4 1-4 3-7z" fill="#2ba05f"/>
-    <path d="M20 44c2-2 6-2 7 1s-1 5-4 5-6-1-6-4 1-1 3-2z" fill="#34c26e"/>
-    <path d="M40 14c2-2 6-1 7 2s-2 5-5 5-5-2-5-4 1-2 3-3z" fill="#2ba05f"/>
-    <path d="M14 8C10 20 10 44 14 56" fill="none" stroke="#dfeeff" stroke-opacity="0.35" stroke-width="1"/>
-    <path d="M34 6C29 20 29 44 34 58" fill="none" stroke="#dfeeff" stroke-opacity="0.28" stroke-width="1"/>
+  <g transform="translate(32 32) scale(1.22) translate(-32 -32)">
+    <circle cx="32" cy="32" r="25" fill="url(#o)"/>
+    <g clip-path="url(#s)">
+      <path d="M8 20c4-3 9-2 11 1s-1 7-5 8-9 0-10-4 1-3 4-5z" fill="#34c26e"/>
+      <path d="M28 34c3-4 10-5 14-1s3 10-2 12-13 1-15-4 1-4 3-7z" fill="#2ba05f"/>
+      <path d="M20 44c2-2 6-2 7 1s-1 5-4 5-6-1-6-4 1-1 3-2z" fill="#34c26e"/>
+      <path d="M40 14c2-2 6-1 7 2s-2 5-5 5-5-2-5-4 1-2 3-3z" fill="#2ba05f"/>
+      <path d="M14 8C10 20 10 44 14 56" fill="none" stroke="#dfeeff" stroke-opacity="0.35" stroke-width="1"/>
+      <path d="M34 6C29 20 29 44 34 58" fill="none" stroke="#dfeeff" stroke-opacity="0.28" stroke-width="1"/>
+    </g>
+    <ellipse cx="32" cy="32" rx="25" ry="8.5" fill="none" stroke="#eef0f8" stroke-opacity="0.22" stroke-width="1"/>
+    <circle cx="32" cy="32" r="25" fill="none" stroke="#34ddbb" stroke-opacity="0.55" stroke-width="1.6"/>
+    <circle cx="23" cy="21" r="3.2" fill="#f5c451" fill-opacity="0.9"/>
   </g>
-  <ellipse cx="32" cy="32" rx="25" ry="8.5" fill="none" stroke="#eef0f8" stroke-opacity="0.22" stroke-width="1"/>
-  <circle cx="32" cy="32" r="25" fill="none" stroke="#34ddbb" stroke-opacity="0.55" stroke-width="1.6"/>
-  <circle cx="23" cy="21" r="3.2" fill="#f5c451" fill-opacity="0.9"/>
 </svg>

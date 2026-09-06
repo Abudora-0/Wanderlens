@@ -47,7 +47,7 @@ export function Hero() {
       <AuroraField />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[var(--color-void)]" />
 
-      <div className="relative mx-auto grid min-h-[90vh] w-full max-w-6xl items-center gap-10 px-5 pb-16 pt-28 lg:grid-cols-[minmax(0,1fr)_minmax(0,460px)] lg:gap-16 lg:pt-24 xl:gap-24">
+      <div className="relative mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-10 px-5 pb-16 pt-24 sm:pt-28 lg:min-h-[90vh] lg:grid-cols-[minmax(0,1fr)_minmax(0,460px)] lg:items-center lg:gap-16 lg:pt-24 xl:gap-24">
         <motion.div
           variants={staggerParent}
           initial="hidden"
@@ -130,7 +130,7 @@ export function Hero() {
           initial={{ opacity: 0, scale: 0.92 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
-          className="relative flex items-center justify-center"
+          className="relative mx-auto flex w-[82%] max-w-[340px] items-center justify-center lg:w-full lg:max-w-none"
         >
           <EarthGlobe />
         </motion.div>

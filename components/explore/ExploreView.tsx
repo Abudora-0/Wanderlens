@@ -172,8 +172,8 @@ export function ExploreView() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 pb-16 pt-24 sm:px-5">
-      <div className="grid gap-6 lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_440px]">
-        <div className="relative h-[46vh] min-h-[300px] overflow-hidden rounded-3xl border border-[var(--color-hairline)] bg-[var(--color-abyss)] lg:h-[74vh]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_440px]">
+        <div className="relative h-[42vh] min-h-[260px] overflow-hidden rounded-3xl border border-[var(--color-hairline)] bg-[var(--color-abyss)] lg:h-[74vh]">
           {isDesktop ? (
             <Globe3D
               continent={continent}
