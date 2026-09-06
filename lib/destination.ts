@@ -130,7 +130,7 @@ export async function buildDossier(input: BuildInput): Promise<DestinationDossie
         getWikipediaSummary(input.name),
         getWeather(input.latitude, input.longitude),
       ]),
-      12000,
+      10000,
       [TIMED_OUT, TIMED_OUT, TIMED_OUT, TIMED_OUT] as never,
     );
 
@@ -188,7 +188,7 @@ export async function buildDossier(input: BuildInput): Promise<DestinationDossie
         : input.kind === "country"
           ? getCountryByName(input.name)
           : Promise.resolve(null);
-    country = await withDeadline(lookup, 6000, null);
+    country = await withDeadline(lookup, 4000, null);
   } catch {
     partial.push("countries");
   }
