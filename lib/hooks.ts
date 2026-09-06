@@ -25,10 +25,6 @@ export function usePrefersReducedMotion(): boolean {
   return useMatchMedia("(prefers-reduced-motion: reduce)");
 }
 
-export function usePointerFine(): boolean {
-  return useMatchMedia("(pointer: fine)");
-}
-
 export function useMediaQuery(queryString: string): boolean {
   return useMatchMedia(queryString);
 }

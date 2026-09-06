@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Sora } from "next/font/google";
 import "./globals.css";
-import { Cursor } from "@/components/ui/Cursor";
 import { ScrollProgress } from "@/components/ui/ScrollProgress";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
@@ -66,7 +65,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="grain flex min-h-full flex-col">
         <ScrollProgress />
-        <Cursor />
         <SiteHeader />
         <main className="flex-1">{children}</main>
         <SiteFooter />
