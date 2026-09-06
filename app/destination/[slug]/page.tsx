@@ -16,24 +16,46 @@ function first(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
-async function resolvePlace(slug: string, sp: Record<string, string | string[] | undefined>) {
+async function resolvePlace(
+  slug: string,
+  sp: Record<string, string | string[] | undefined>,
+) {
   const nameParam = first(sp.name);
-  const name = (nameParam ?? slug.replace(/-/g, " ")).trim();
-  const country = first(sp.country) ?? null;
+  let name = (nameParam ?? slug.replace(/-/g, " ")).trim();
+  let country = first(sp.country) ?? null;
   let cc = first(sp.cc) ?? null;
   const kindParam = first(sp.kind) as PlaceKind | undefined;
-  const kind: PlaceKind = kindParam && KINDS.includes(kindParam) ? kindParam : "city";
+  const kind: PlaceKind =
+    kindParam && KINDS.includes(kindParam) ? kindParam : "city";
 
   let lat = Number.parseFloat(first(sp.lat) ?? "");
   let lon = Number.parseFloat(first(sp.lon) ?? "");
 
   if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-    const hits = await geocode(country ? `${name} ${country}` : name);
-    const hit = hits[0];
+    // Build progressively shorter queries from the slug: the trailing words are
+    // usually the country, so "delhi india" -> ["delhi india", "delhi"].
+    const words = (nameParam ?? slug.replace(/-/g, " ")).trim().split(/\s+/);
+    const queries: string[] = [];
+    if (country) queries.push(`${name} ${country}`);
+    for (let take = words.length; take >= 1; take -= 1) {
+      queries.push(words.slice(0, take).join(" "));
+    }
+
+    let hit = null;
+    for (const query of [...new Set(queries)]) {
+      const hits = await geocode(query);
+      if (hits[0]) {
+        hit = hits[0];
+        break;
+      }
+    }
     if (!hit) return null;
+
     lat = hit.latitude;
     lon = hit.longitude;
     cc = cc ?? hit.countryCode;
+    country = country ?? hit.country ?? null;
+    if (!nameParam) name = hit.name;
   }
 
   return { name, lat, lon, country, cc, kind };

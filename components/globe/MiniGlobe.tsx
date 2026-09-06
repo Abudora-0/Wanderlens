@@ -61,13 +61,16 @@ export function MiniGlobe() {
       height: size * dpr,
       phi: state.phi,
       theta: state.theta,
-      dark: 1,
-      diffuse: 1.15,
-      mapSamples: 16000,
-      mapBrightness: 6,
-      baseColor: [0.19, 0.36, 0.6],
-      markerColor: [0.32, 0.86, 0.5],
-      glowColor: [0.2, 0.55, 0.75],
+      // A clean lit ocean sphere: the land dot-map is switched off (brightness 0)
+      // so the globe reads as a smooth planet, not a dotted texture.
+      dark: 0.55,
+      diffuse: 1.4,
+      mapSamples: 1,
+      mapBrightness: 0,
+      mapBaseBrightness: 0.32,
+      baseColor: [0.17, 0.4, 0.68],
+      markerColor: [0.38, 0.9, 0.56],
+      glowColor: [0.2, 0.55, 0.78],
       markers: MARKERS,
     });
 
