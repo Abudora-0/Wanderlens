@@ -3,6 +3,7 @@ import { buildDossier } from "@/lib/destination";
 import type { PlaceKind } from "@/lib/types";
 
 export const revalidate = 3600;
+export const maxDuration = 30;
 
 const VALID_KINDS: PlaceKind[] = [
   "country",

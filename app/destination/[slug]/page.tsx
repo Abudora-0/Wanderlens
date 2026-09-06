@@ -8,6 +8,7 @@ import { DestinationRetry } from "@/components/destination/DestinationRetry";
 import type { PlaceKind } from "@/lib/types";
 
 export const revalidate = 3600;
+export const maxDuration = 30;
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 

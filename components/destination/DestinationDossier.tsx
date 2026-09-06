@@ -135,6 +135,7 @@ export function DestinationDossier({ dossier }: { dossier: DestinationDossier })
                 key={attraction.id}
                 attraction={attraction}
                 index={index}
+                placeName={dossier.place.name}
               />
             ))}
           </div>

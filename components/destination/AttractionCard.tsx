@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import type { Attraction } from "@/lib/types";
 import { formatDistance } from "@/lib/format";
@@ -22,12 +22,45 @@ const CATEGORY_LABEL: Record<string, string> = {
 export function AttractionCard({
   attraction,
   index,
+  placeName,
 }: {
   attraction: Attraction;
   index: number;
+  placeName: string;
 }) {
   const [broken, setBroken] = useState(false);
-  const showImage = attraction.image && !broken;
+  const [fetchedImage, setFetchedImage] = useState<string | null>(null);
+  const [fetchedUrl, setFetchedUrl] = useState<string | null>(null);
+
+  // Look up an image for cards the server could not fill (staggered so the
+  // burst of requests spreads out).
+  useEffect(() => {
+    if (attraction.image) return;
+    const controller = new AbortController();
+    const timer = setTimeout(
+      () => {
+        fetch(
+          `/api/attraction-image?q=${encodeURIComponent(`${attraction.title} ${placeName}`)}`,
+          { signal: controller.signal },
+        )
+          .then((r) => r.json())
+          .then((d: { image: string | null; url: string | null }) => {
+            if (d.image) setFetchedImage(d.image);
+            if (d.url) setFetchedUrl(d.url);
+          })
+          .catch(() => undefined);
+      },
+      120 + Math.min(index, 12) * 130,
+    );
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [attraction.image, attraction.title, placeName, index]);
+
+  const image = attraction.image ?? fetchedImage;
+  const url = attraction.url ?? fetchedUrl;
+  const showImage = image && !broken;
 
   return (
     <motion.article
@@ -40,7 +73,7 @@ export function AttractionCard({
       <div className="relative aspect-[4/3] overflow-hidden bg-[var(--color-abyss)]">
         {showImage ? (
           <Image
-            src={attraction.image as string}
+            src={image as string}
             alt={attraction.title}
             fill
             sizes="(max-width: 640px) 92vw, (max-width: 1280px) 46vw, 30vw"
@@ -70,9 +103,9 @@ export function AttractionCard({
         <p className="mt-2 line-clamp-3 flex-1 text-sm text-[var(--color-ink-soft)]">
           {attraction.blurb}
         </p>
-        {attraction.url && (
+        {url && (
           <a
-            href={attraction.url}
+            href={url}
             target="_blank"
             rel="noopener noreferrer"
             className="focus-ring mt-4 inline-flex items-center gap-1.5 text-xs font-medium text-[var(--color-ink-mute)] transition-colors hover:text-[var(--color-ink)]"
@@ -95,7 +128,7 @@ export function AttractionCard({
 }
 
 function PatternFallback({ seed }: { seed: string }) {
-  // Keep the placeholder wash inside the Earth palette: teal (170) to ocean (215).
+  // Keep the placeholder wash inside the Earth palette: teal to ocean.
   const hue =
     160 + ([...seed].reduce((acc, char) => acc + char.charCodeAt(0), 0) % 60);
   return (

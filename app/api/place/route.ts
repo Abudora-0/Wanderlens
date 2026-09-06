@@ -3,6 +3,7 @@ import { getPlaceNode } from "@/lib/sources/wikivoyage-hierarchy";
 import type { NodeKind } from "@/lib/types";
 
 export const revalidate = 86400;
+export const maxDuration = 30;
 
 const KINDS: NodeKind[] = ["continent", "country", "region", "city", "area"];
 

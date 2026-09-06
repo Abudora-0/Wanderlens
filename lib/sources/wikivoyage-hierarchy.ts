@@ -86,44 +86,56 @@ function markersToLinks(section: string): PlaceLink[] {
   }));
 }
 
+/** Resolve `promise` but give up (resolve to `fallback`) after `ms`. */
+function withDeadline<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
+
 /**
- * Fill in coordinates so every destination link is directly openable without a
- * downstream geocode. Wikidata first (exact), then Open-Meteo by name.
+ * Fill in coordinates so most destination links open without a downstream
+ * geocode. Wikidata first (exact), then Open-Meteo by name. Time-boxed so it
+ * never dominates the response; the destination page resolves the rest lazily.
  */
 async function backfillCoords(
   links: PlaceLink[],
   contextName: string,
 ): Promise<PlaceLink[]> {
-  await Promise.all(
-    links
-      .filter((l) => l.latitude === null && l.accent?.startsWith("Q"))
-      .slice(0, 12)
-      .map(async (link) => {
-        const coords = await coordsForWikidata(link.accent as string);
-        if (coords) {
-          link.latitude = coords.latitude;
-          link.longitude = coords.longitude;
-        }
-      }),
-  );
-
-  await Promise.all(
-    links
-      .filter((l) => l.latitude === null)
-      .slice(0, 12)
-      .map(async (link) => {
-        try {
-          const hits = await geocode(`${link.name} ${contextName}`.trim());
-          const hit = hits[0] ?? (await geocode(link.name))[0];
-          if (hit) {
-            link.latitude = hit.latitude;
-            link.longitude = hit.longitude;
+  const work = (async () => {
+    await Promise.all(
+      links
+        .filter((l) => l.latitude === null && l.accent?.startsWith("Q"))
+        .slice(0, 10)
+        .map(async (link) => {
+          const coords = await coordsForWikidata(link.accent as string);
+          if (coords) {
+            link.latitude = coords.latitude;
+            link.longitude = coords.longitude;
           }
-        } catch {
-          // leave it null; the destination page will resolve it lazily
-        }
-      }),
-  );
+        }),
+    );
+
+    await Promise.all(
+      links
+        .filter((l) => l.latitude === null)
+        .slice(0, 10)
+        .map(async (link) => {
+          try {
+            const hits = await geocode(`${link.name} ${contextName}`.trim());
+            if (hits[0]) {
+              link.latitude = hits[0].latitude;
+              link.longitude = hits[0].longitude;
+            }
+          } catch {
+            // leave it null; the destination page resolves it lazily
+          }
+        }),
+    );
+  })();
+
+  await withDeadline(work, 4500, undefined);
 
   return links.map((l) => ({
     ...l,

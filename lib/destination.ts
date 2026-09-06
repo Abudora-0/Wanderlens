@@ -5,11 +5,7 @@ import type {
   PlaceKind,
 } from "@/lib/types";
 import { getWikivoyageAttractions } from "@/lib/sources/wikivoyage";
-import {
-  getWikipediaNearby,
-  getWikipediaSummary,
-  getWikipediaImageBySearch,
-} from "@/lib/sources/wikipedia";
+import { getWikipediaNearby, getWikipediaSummary } from "@/lib/sources/wikipedia";
 import { getCountryByCode, getCountryByName } from "@/lib/sources/countries";
 import { getWeather } from "@/lib/sources/weather";
 import { normalizeDashes } from "@/lib/format";
@@ -111,18 +107,32 @@ function rankAndTrim(attractions: Attraction[], limit = 18): Attraction[] {
     .slice(0, limit);
 }
 
+function withDeadline<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
+
+const TIMED_OUT = { status: "rejected", reason: "deadline" } as const;
+
 export async function buildDossier(input: BuildInput): Promise<DestinationDossier> {
   const radius = radiusForKind(input.kind);
   const origin = { latitude: input.latitude, longitude: input.longitude };
   const partial: string[] = [];
 
+  // Overall deadline so a slow open API never blows the function budget.
   const [wikivoyage, wikipediaNearby, wikipediaSummary, weather] =
-    await Promise.allSettled([
-      getWikivoyageAttractions(input.name, origin),
-      getWikipediaNearby(origin, radius),
-      getWikipediaSummary(input.name),
-      getWeather(input.latitude, input.longitude),
-    ]);
+    await withDeadline(
+      Promise.allSettled([
+        getWikivoyageAttractions(input.name, origin),
+        getWikipediaNearby(origin, radius),
+        getWikipediaSummary(input.name),
+        getWeather(input.latitude, input.longitude),
+      ]),
+      12000,
+      [TIMED_OUT, TIMED_OUT, TIMED_OUT, TIMED_OUT] as never,
+    );
 
   let voyageAttractions: Attraction[] = [];
   let summary: string | null = null;
@@ -167,36 +177,18 @@ export async function buildDossier(input: BuildInput): Promise<DestinationDossie
     blurb: normalizeDashes(item.blurb),
   }));
 
-  // Backfill images for the top ranked spots that still lack one, but only if the
-  // primary sources delivered at all (never pile requests onto a failed fetch).
-  if (attractions.length > 0) {
-    await Promise.all(
-      attractions
-        .filter((item) => !item.image)
-        .slice(0, 8)
-        .map(async (item) => {
-          const found = await getWikipediaImageBySearch(
-            `${item.title} ${input.name}`,
-          );
-          if (found.image) {
-            item.image = found.image;
-            item.url = item.url ?? found.url;
-          }
-        }),
-    );
-  }
-
   if (summary) summary = normalizeDashes(summary);
 
   let country = null;
   try {
-    if (input.countryCode) {
-      country = await getCountryByCode(input.countryCode);
-    } else if (input.country) {
-      country = await getCountryByName(input.country);
-    } else if (input.kind === "country") {
-      country = await getCountryByName(input.name);
-    }
+    const lookup = input.countryCode
+      ? getCountryByCode(input.countryCode)
+      : input.country
+        ? getCountryByName(input.country)
+        : input.kind === "country"
+          ? getCountryByName(input.name)
+          : Promise.resolve(null);
+    country = await withDeadline(lookup, 6000, null);
   } catch {
     partial.push("countries");
   }

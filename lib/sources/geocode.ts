@@ -54,7 +54,7 @@ export async function geocode(query: string): Promise<GeoCandidate[]> {
   url.searchParams.set("language", "en");
   url.searchParams.set("format", "json");
 
-  const res = await timedFetch(url, { next: { revalidate: 86400 } }, 8000);
+  const res = await timedFetch(url, { next: { revalidate: 86400 } }, 6000);
   if (!res.ok) throw new Error(`geocode upstream ${res.status}`);
 
   const data = (await res.json()) as { results?: OpenMeteoResult[] };
