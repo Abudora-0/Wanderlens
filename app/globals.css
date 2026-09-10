@@ -168,6 +168,27 @@ h4 {
   animation: none;
 }
 
+/* Mobile: the four large blur(70px) layers animating forever are the main
+   compositor cost on a phone. Keep the colour wash, drop the motion, shrink
+   the blur, and stop promoting layers we no longer transform. */
+@media (max-width: 767px) {
+  .aurora-blob {
+    animation: none !important;
+    filter: blur(45px);
+    opacity: 0.4;
+    will-change: auto;
+  }
+  .aurora-blob-4 {
+    display: none;
+  }
+  .grain::after {
+    display: none;
+  }
+  .text-aurora {
+    animation: none;
+  }
+}
+
 @keyframes aurora-drift-1 {
   to {
     transform: translate3d(8%, 6%, 0) scale(1.12);

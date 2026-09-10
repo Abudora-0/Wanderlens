@@ -17,7 +17,10 @@ export function AuroraField() {
     const context = canvas.getContext("2d");
     if (!context) return;
 
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    // A one-shot starfield does not need retina density, and on mobile the
+    // full-height 2x buffer is just memory. Cap it low.
+    const mobile = window.matchMedia("(max-width: 767px)").matches;
+    const dpr = Math.min(window.devicePixelRatio || 1, mobile ? 1 : 2);
 
     const paint = () => {
       const width = canvas.offsetWidth;

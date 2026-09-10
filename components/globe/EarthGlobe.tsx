@@ -34,10 +34,22 @@ export function EarthGlobe() {
     const mount = mountRef.current;
     if (!mount) return;
 
+    // Phones and low-core devices get a lighter globe: no MSAA, capped pixel
+    // ratio, coarser meshes, a smaller texture and a 30fps cap.
+    const lowPower =
+      window.matchMedia("(max-width: 768px), (pointer: coarse)").matches ||
+      (navigator.hardwareConcurrency ?? 8) <= 4;
+
     let size = mount.clientWidth || 420;
 
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    const renderer = new THREE.WebGLRenderer({
+      alpha: true,
+      antialias: !lowPower,
+      powerPreference: "low-power",
+    });
+    renderer.setPixelRatio(
+      lowPower ? 1 : Math.min(window.devicePixelRatio || 1, 2),
+    );
     renderer.setSize(size, size);
     renderer.domElement.style.cursor = "grab";
     renderer.domElement.style.touchAction = "none";
@@ -59,39 +71,44 @@ export function EarthGlobe() {
       roughness: 0.92,
       metalness: 0,
     });
+    const earthSegments = lowPower ? 56 : 72;
     const earth = new THREE.Mesh(
-      new THREE.SphereGeometry(1, 96, 96),
+      new THREE.SphereGeometry(1, earthSegments, earthSegments),
       earthMat,
     );
     group.add(earth);
 
     // Texture: painted once from the equirectangular land map.
+    const texW = lowPower ? 1536 : 2048;
+    const texH = texW / 2;
     const img = new Image();
     img.onload = () => {
       const c = document.createElement("canvas");
-      c.width = 2048;
-      c.height = 1024;
+      c.width = texW;
+      c.height = texH;
       const ctx = c.getContext("2d");
       if (!ctx) return;
-      const grad = ctx.createLinearGradient(0, 0, 0, 1024);
+      const grad = ctx.createLinearGradient(0, 0, 0, texH);
       grad.addColorStop(0, "#0a2a5c");
       grad.addColorStop(0.5, "#1c69c4");
       grad.addColorStop(1, "#0a2a5c");
       ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, 2048, 1024);
-      ctx.drawImage(img, 0, 0, 2048, 1024);
+      ctx.fillRect(0, 0, texW, texH);
+      ctx.drawImage(img, 0, 0, texW, texH);
       const tex = new THREE.CanvasTexture(c);
       tex.colorSpace = THREE.SRGBColorSpace;
-      tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      tex.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 4);
       earthMat.map = tex;
       earthMat.color.set(0xffffff);
       earthMat.needsUpdate = true;
+      renderOnce();
     };
     img.src = "/earth-map.svg";
 
     // Atmosphere
+    const atmoSegments = lowPower ? 28 : 48;
     const atmosphere = new THREE.Mesh(
-      new THREE.SphereGeometry(1.22, 64, 64),
+      new THREE.SphereGeometry(1.22, atmoSegments, atmoSegments),
       new THREE.ShaderMaterial({
         vertexShader: ATMOSPHERE_VERT,
         fragmentShader: ATMOSPHERE_FRAG,
@@ -126,6 +143,7 @@ export function EarthGlobe() {
       state.moved = 0;
       el.style.cursor = "grabbing";
       el.setPointerCapture(e.pointerId);
+      start(); // wake a parked loop
     };
     const onMove = (e: PointerEvent) => {
       if (!state.dragging) return;
@@ -152,37 +170,7 @@ export function EarthGlobe() {
     el.addEventListener("pointerup", onUp);
     el.addEventListener("pointercancel", onUp);
 
-    const resize = () => {
-      size = mount.clientWidth || size;
-      renderer.setSize(size, size);
-    };
-    const ro = new ResizeObserver(resize);
-    ro.observe(mount);
-
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        state.onScreen = entry.isIntersecting && !document.hidden;
-      },
-      { threshold: 0 },
-    );
-    io.observe(mount);
-    const onVis = () => {
-      state.onScreen = !document.hidden;
-    };
-    document.addEventListener("visibilitychange", onVis);
-
-    let frame = 0;
-    const tick = () => {
-      frame = requestAnimationFrame(tick);
-      if (!state.onScreen) return;
-
-      if (!state.dragging) {
-        state.velX *= 0.92;
-        state.velY *= 0.94;
-        if (!reducedMotion && Math.abs(state.velY) < 0.0022) {
-          state.velY += (-0.0022 - state.velY) * 0.05;
-        }
-      }
+    const renderFrame = () => {
       group.rotation.y += state.velY;
       group.rotation.x = Math.max(
         -1.15,
@@ -191,10 +179,81 @@ export function EarthGlobe() {
       atmosphere.rotation.copy(group.rotation);
       renderer.render(scene, camera);
     };
-    frame = requestAnimationFrame(tick);
+    const renderOnce = () => {
+      if (state.onScreen) renderFrame();
+    };
+
+    const resize = () => {
+      size = mount.clientWidth || size;
+      renderer.setSize(size, size);
+      renderOnce();
+    };
+    const ro = new ResizeObserver(resize);
+    ro.observe(mount);
+
+    let frame = 0;
+    const minFrameMs = lowPower ? 33 : 0; // ~30fps cap on phones
+    let lastRender = 0;
+
+    const tick = (now: number) => {
+      frame = requestAnimationFrame(tick);
+      if (now - lastRender < minFrameMs) return;
+      lastRender = now;
+
+      if (!state.dragging) {
+        state.velX *= 0.92;
+        state.velY *= 0.94;
+        if (!reducedMotion && Math.abs(state.velY) < 0.0022) {
+          state.velY += (-0.0022 - state.velY) * 0.05;
+        }
+      }
+      renderFrame();
+
+      // Reduced motion: once the globe settles, stop the loop entirely and
+      // wait for the next interaction.
+      if (
+        reducedMotion &&
+        !state.dragging &&
+        Math.abs(state.velX) < 0.0002 &&
+        Math.abs(state.velY) < 0.0002
+      ) {
+        stop();
+      }
+    };
+    const start = () => {
+      if (!frame && state.onScreen) {
+        lastRender = 0;
+        frame = requestAnimationFrame(tick);
+      }
+    };
+    const stop = () => {
+      if (frame) cancelAnimationFrame(frame);
+      frame = 0;
+    };
+
+    // Fully stop the render loop whenever the globe is off-screen or the tab is
+    // hidden - the single biggest battery / jank win on mobile.
+    let inView = true;
+    const sync = () => {
+      state.onScreen = inView && !document.hidden;
+      if (state.onScreen) start();
+      else stop();
+    };
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        inView = entry.isIntersecting;
+        sync();
+      },
+      { threshold: 0 },
+    );
+    io.observe(mount);
+    const onVis = () => sync();
+    document.addEventListener("visibilitychange", onVis);
+
+    start();
 
     return () => {
-      cancelAnimationFrame(frame);
+      stop();
       ro.disconnect();
       io.disconnect();
       document.removeEventListener("visibilitychange", onVis);
